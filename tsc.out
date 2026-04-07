@@ -1,0 +1,1 @@
+src/services/inference/models/AttentionNet.ts(102,10): error TS6133: 'attentionGate' is declared but its value is never read.

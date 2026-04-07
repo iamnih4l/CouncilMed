@@ -1,0 +1,101 @@
+﻿src/components/3d/ParticleField.tsx(46,10): error TS2741: Property 'args' is missing in type '{ attach: string; count: number; array: Float32Array<ArrayBuffer>; itemSize: number; }' but required in type 'Mutable<Overwrite<Partial<Overwrite<BufferAttribute, MathProps<BufferAttribute> & ReactProps<BufferAttribute>>>, Omit<...>>>'.
+src/components/3d/ParticleField.tsx(47,10): error TS2741: Property 'args' is missing in type '{ attach: string; count: number; array: Float32Array<ArrayBuffer>; itemSize: number; }' but required in type 'Mutable<Overwrite<Partial<Overwrite<BufferAttribute, MathProps<BufferAttribute> & ReactProps<BufferAttribute>>>, Omit<...>>>'.
+src/components/dashboard/ScanLogsTable.tsx(1,1): error TS6133: 'React' is declared but its value is never read.
+src/components/ui/ConfidenceBar.tsx(1,1): error TS6133: 'React' is declared but its value is never read.
+src/pages/CTAnalysis.tsx(1,27): error TS2307: Cannot find module '../ui/GlassCard' or its corresponding type declarations.
+src/pages/CTAnalysis.tsx(2,29): error TS2307: Cannot find module '../ui/StatusBadge' or its corresponding type declarations.
+src/pages/CTAnalysis.tsx(3,31): error TS2307: Cannot find module '../ui/ConfidenceBar' or its corresponding type declarations.
+src/pages/Dashboard.tsx(2,1): error TS6133: 'useMemo' is declared but its value is never read.
+src/pages/Dashboard.tsx(3,27): error TS2307: Cannot find module '../ui/GlassCard' or its corresponding type declarations.
+src/pages/Dashboard.tsx(4,27): error TS2307: Cannot find module '../3d/ParticleField' or its corresponding type declarations.
+src/pages/Dashboard.tsx(5,31): error TS2307: Cannot find module './dashboard/ScanLogsTable' or its corresponding type declarations.
+src/pages/Dashboard.tsx(6,52): error TS6133: 'BarChart' is declared but its value is never read.
+src/pages/Dashboard.tsx(6,62): error TS6133: 'Bar' is declared but its value is never read.
+src/pages/Dashboard.tsx(6,67): error TS6133: 'XAxis' is declared but its value is never read.
+src/pages/Dashboard.tsx(6,74): error TS6133: 'YAxis' is declared but its value is never read.
+src/pages/Dashboard.tsx(16,7): error TS6133: 'barData' is declared but its value is never read.
+src/pages/Dashboard.tsx(57,21): error TS2322: Type '{ hidden: { opacity: number; y: number; }; show: { opacity: number; y: number; transition: { type: string; stiffness: number; damping: number; }; }; }' is not assignable to type 'Variants'.
+  Property 'show' is incompatible with index signature.
+    Type '{ opacity: number; y: number; transition: { type: string; stiffness: number; damping: number; }; }' is not assignable to type 'Variant'.
+      Type '{ opacity: number; y: number; transition: { type: string; stiffness: number; damping: number; }; }' is not assignable to type 'TargetAndTransition'.
+        Type '{ opacity: number; y: number; transition: { type: string; stiffness: number; damping: number; }; }' is not assignable to type '{ transition?: Transition<any> | undefined; transitionEnd?: ResolvedValues$1 | undefined; }'.
+          Types of property 'transition' are incompatible.
+            Type '{ type: string; stiffness: number; damping: number; }' is not assignable to type 'Transition<any> | undefined'.
+              Type '{ type: string; stiffness: number; damping: number; }' is not assignable to type 'TransitionWithValueOverrides<any>'.
+                Type '{ type: string; stiffness: number; damping: number; }' is not assignable to type 'ValueAnimationTransition<any>'.
+                  Types of property 'type' are incompatible.
+                    Type 'string' is not assignable to type 'AnimationGeneratorType | undefined'.
+src/pages/Dashboard.tsx(75,21): error TS2322: Type '{ hidden: { opacity: number; y: number; }; show: { opacity: number; y: number; transition: { type: string; stiffness: number; damping: number; }; }; }' is not assignable to type 'Variants'.
+  Property 'show' is incompatible with index signature.
+    Type '{ opacity: number; y: number; transition: { type: string; stiffness: number; damping: number; }; }' is not assignable to type 'Variant'.
+      Type '{ opacity: number; y: number; transition: { type: string; stiffness: number; damping: number; }; }' is not assignable to type 'TargetAndTransition'.
+        Type '{ opacity: number; y: number; transition: { type: string; stiffness: number; damping: number; }; }' is not assignable to type '{ transition?: Transition<any> | undefined; transitionEnd?: ResolvedValues$1 | undefined; }'.
+          Types of property 'transition' are incompatible.
+            Type '{ type: string; stiffness: number; damping: number; }' is not assignable to type 'Transition<any> | undefined'.
+              Type '{ type: string; stiffness: number; damping: number; }' is not assignable to type 'TransitionWithValueOverrides<any>'.
+                Type '{ type: string; stiffness: number; damping: number; }' is not assignable to type 'ValueAnimationTransition<any>'.
+                  Types of property 'type' are incompatible.
+                    Type 'string' is not assignable to type 'AnimationGeneratorType | undefined'.
+src/pages/Dashboard.tsx(93,21): error TS2322: Type '{ hidden: { opacity: number; y: number; }; show: { opacity: number; y: number; transition: { type: string; stiffness: number; damping: number; }; }; }' is not assignable to type 'Variants'.
+  Property 'show' is incompatible with index signature.
+    Type '{ opacity: number; y: number; transition: { type: string; stiffness: number; damping: number; }; }' is not assignable to type 'Variant'.
+      Type '{ opacity: number; y: number; transition: { type: string; stiffness: number; damping: number; }; }' is not assignable to type 'TargetAndTransition'.
+        Type '{ opacity: number; y: number; transition: { type: string; stiffness: number; damping: number; }; }' is not assignable to type '{ transition?: Transition<any> | undefined; transitionEnd?: ResolvedValues$1 | undefined; }'.
+          Types of property 'transition' are incompatible.
+            Type '{ type: string; stiffness: number; damping: number; }' is not assignable to type 'Transition<any> | undefined'.
+              Type '{ type: string; stiffness: number; damping: number; }' is not assignable to type 'TransitionWithValueOverrides<any>'.
+                Type '{ type: string; stiffness: number; damping: number; }' is not assignable to type 'ValueAnimationTransition<any>'.
+                  Types of property 'type' are incompatible.
+                    Type 'string' is not assignable to type 'AnimationGeneratorType | undefined'.
+src/pages/Dashboard.tsx(111,21): error TS2322: Type '{ hidden: { opacity: number; y: number; }; show: { opacity: number; y: number; transition: { type: string; stiffness: number; damping: number; }; }; }' is not assignable to type 'Variants'.
+  Property 'show' is incompatible with index signature.
+    Type '{ opacity: number; y: number; transition: { type: string; stiffness: number; damping: number; }; }' is not assignable to type 'Variant'.
+      Type '{ opacity: number; y: number; transition: { type: string; stiffness: number; damping: number; }; }' is not assignable to type 'TargetAndTransition'.
+        Type '{ opacity: number; y: number; transition: { type: string; stiffness: number; damping: number; }; }' is not assignable to type '{ transition?: Transition<any> | undefined; transitionEnd?: ResolvedValues$1 | undefined; }'.
+          Types of property 'transition' are incompatible.
+            Type '{ type: string; stiffness: number; damping: number; }' is not assignable to type 'Transition<any> | undefined'.
+              Type '{ type: string; stiffness: number; damping: number; }' is not assignable to type 'TransitionWithValueOverrides<any>'.
+                Type '{ type: string; stiffness: number; damping: number; }' is not assignable to type 'ValueAnimationTransition<any>'.
+                  Types of property 'type' are incompatible.
+                    Type 'string' is not assignable to type 'AnimationGeneratorType | undefined'.
+src/pages/Dashboard.tsx(131,21): error TS2322: Type '{ hidden: { opacity: number; y: number; }; show: { opacity: number; y: number; transition: { type: string; stiffness: number; damping: number; }; }; }' is not assignable to type 'Variants'.
+  Property 'show' is incompatible with index signature.
+    Type '{ opacity: number; y: number; transition: { type: string; stiffness: number; damping: number; }; }' is not assignable to type 'Variant'.
+      Type '{ opacity: number; y: number; transition: { type: string; stiffness: number; damping: number; }; }' is not assignable to type 'TargetAndTransition'.
+        Type '{ opacity: number; y: number; transition: { type: string; stiffness: number; damping: number; }; }' is not assignable to type '{ transition?: Transition<any> | undefined; transitionEnd?: ResolvedValues$1 | undefined; }'.
+          Types of property 'transition' are incompatible.
+            Type '{ type: string; stiffness: number; damping: number; }' is not assignable to type 'Transition<any> | undefined'.
+              Type '{ type: string; stiffness: number; damping: number; }' is not assignable to type 'TransitionWithValueOverrides<any>'.
+                Type '{ type: string; stiffness: number; damping: number; }' is not assignable to type 'ValueAnimationTransition<any>'.
+                  Types of property 'type' are incompatible.
+                    Type 'string' is not assignable to type 'AnimationGeneratorType | undefined'.
+src/pages/Dashboard.tsx(163,21): error TS2322: Type '{ hidden: { opacity: number; y: number; }; show: { opacity: number; y: number; transition: { type: string; stiffness: number; damping: number; }; }; }' is not assignable to type 'Variants'.
+  Property 'show' is incompatible with index signature.
+    Type '{ opacity: number; y: number; transition: { type: string; stiffness: number; damping: number; }; }' is not assignable to type 'Variant'.
+      Type '{ opacity: number; y: number; transition: { type: string; stiffness: number; damping: number; }; }' is not assignable to type 'TargetAndTransition'.
+        Type '{ opacity: number; y: number; transition: { type: string; stiffness: number; damping: number; }; }' is not assignable to type '{ transition?: Transition<any> | undefined; transitionEnd?: ResolvedValues$1 | undefined; }'.
+          Types of property 'transition' are incompatible.
+            Type '{ type: string; stiffness: number; damping: number; }' is not assignable to type 'Transition<any> | undefined'.
+              Type '{ type: string; stiffness: number; damping: number; }' is not assignable to type 'TransitionWithValueOverrides<any>'.
+                Type '{ type: string; stiffness: number; damping: number; }' is not assignable to type 'ValueAnimationTransition<any>'.
+                  Types of property 'type' are incompatible.
+                    Type 'string' is not assignable to type 'AnimationGeneratorType | undefined'.
+src/pages/Dashboard.tsx(202,19): error TS2322: Type '{ hidden: { opacity: number; y: number; }; show: { opacity: number; y: number; transition: { type: string; stiffness: number; damping: number; }; }; }' is not assignable to type 'Variants'.
+  Property 'show' is incompatible with index signature.
+    Type '{ opacity: number; y: number; transition: { type: string; stiffness: number; damping: number; }; }' is not assignable to type 'Variant'.
+      Type '{ opacity: number; y: number; transition: { type: string; stiffness: number; damping: number; }; }' is not assignable to type 'TargetAndTransition'.
+        Type '{ opacity: number; y: number; transition: { type: string; stiffness: number; damping: number; }; }' is not assignable to type '{ transition?: Transition<any> | undefined; transitionEnd?: ResolvedValues$1 | undefined; }'.
+          Types of property 'transition' are incompatible.
+            Type '{ type: string; stiffness: number; damping: number; }' is not assignable to type 'Transition<any> | undefined'.
+              Type '{ type: string; stiffness: number; damping: number; }' is not assignable to type 'TransitionWithValueOverrides<any>'.
+                Type '{ type: string; stiffness: number; damping: number; }' is not assignable to type 'ValueAnimationTransition<any>'.
+                  Types of property 'type' are incompatible.
+                    Type 'string' is not assignable to type 'AnimationGeneratorType | undefined'.
+src/pages/MRIAnalysis.tsx(2,27): error TS2307: Cannot find module '../ui/GlassCard' or its corresponding type declarations.
+src/pages/MRIAnalysis.tsx(3,24): error TS2307: Cannot find module '../3d/BrainModel' or its corresponding type declarations.
+src/pages/MRIAnalysis.tsx(4,29): error TS2307: Cannot find module '../ui/StatusBadge' or its corresponding type declarations.
+src/pages/MRIAnalysis.tsx(5,31): error TS2307: Cannot find module '../ui/ConfidenceBar' or its corresponding type declarations.
+src/pages/MRIAnalysis.tsx(7,16): error TS6133: 'Pause' is declared but its value is never read.
+src/pages/XRayAnalysis.tsx(1,27): error TS2307: Cannot find module '../ui/GlassCard' or its corresponding type declarations.
+src/pages/XRayAnalysis.tsx(2,29): error TS2307: Cannot find module '../ui/StatusBadge' or its corresponding type declarations.
+src/pages/XRayAnalysis.tsx(3,31): error TS2307: Cannot find module '../ui/ConfidenceBar' or its corresponding type declarations.
