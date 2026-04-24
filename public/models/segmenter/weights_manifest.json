@@ -1,0 +1,172 @@
+{
+  "name": "segmenter",
+  "format": "councilmed-weights-v1",
+  "numWeights": 16,
+  "totalBytes": 4051756,
+  "weights": [
+    {
+      "name": "w0",
+      "shape": [
+        3,
+        3,
+        3,
+        32
+      ],
+      "dtype": "float32",
+      "byteOffset": 0,
+      "byteLength": 3456
+    },
+    {
+      "name": "w1",
+      "shape": [
+        32
+      ],
+      "dtype": "float32",
+      "byteOffset": 3456,
+      "byteLength": 128
+    },
+    {
+      "name": "w2",
+      "shape": [
+        3,
+        3,
+        32,
+        64
+      ],
+      "dtype": "float32",
+      "byteOffset": 3584,
+      "byteLength": 73728
+    },
+    {
+      "name": "w3",
+      "shape": [
+        64
+      ],
+      "dtype": "float32",
+      "byteOffset": 77312,
+      "byteLength": 256
+    },
+    {
+      "name": "w4",
+      "shape": [
+        3,
+        3,
+        64,
+        128
+      ],
+      "dtype": "float32",
+      "byteOffset": 77568,
+      "byteLength": 294912
+    },
+    {
+      "name": "w5",
+      "shape": [
+        128
+      ],
+      "dtype": "float32",
+      "byteOffset": 372480,
+      "byteLength": 512
+    },
+    {
+      "name": "w6",
+      "shape": [
+        3,
+        3,
+        128,
+        256
+      ],
+      "dtype": "float32",
+      "byteOffset": 372992,
+      "byteLength": 1179648
+    },
+    {
+      "name": "w7",
+      "shape": [
+        256
+      ],
+      "dtype": "float32",
+      "byteOffset": 1552640,
+      "byteLength": 1024
+    },
+    {
+      "name": "w8",
+      "shape": [
+        3,
+        3,
+        256,
+        256
+      ],
+      "dtype": "float32",
+      "byteOffset": 1553664,
+      "byteLength": 2359296
+    },
+    {
+      "name": "w9",
+      "shape": [
+        256
+      ],
+      "dtype": "float32",
+      "byteOffset": 3912960,
+      "byteLength": 1024
+    },
+    {
+      "name": "w10",
+      "shape": [
+        256,
+        128
+      ],
+      "dtype": "float32",
+      "byteOffset": 3913984,
+      "byteLength": 131072
+    },
+    {
+      "name": "w11",
+      "shape": [
+        128
+      ],
+      "dtype": "float32",
+      "byteOffset": 4045056,
+      "byteLength": 512
+    },
+    {
+      "name": "w12",
+      "shape": [
+        128,
+        10
+      ],
+      "dtype": "float32",
+      "byteOffset": 4045568,
+      "byteLength": 5120
+    },
+    {
+      "name": "w13",
+      "shape": [
+        10
+      ],
+      "dtype": "float32",
+      "byteOffset": 4050688,
+      "byteLength": 40
+    },
+    {
+      "name": "w14",
+      "shape": [
+        1,
+        1,
+        256,
+        1
+      ],
+      "dtype": "float32",
+      "byteOffset": 4050728,
+      "byteLength": 1024
+    },
+    {
+      "name": "w15",
+      "shape": [
+        1
+      ],
+      "dtype": "float32",
+      "byteOffset": 4051752,
+      "byteLength": 4
+    }
+  ]
+}

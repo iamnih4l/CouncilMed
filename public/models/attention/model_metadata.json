@@ -1,0 +1,13 @@
+{
+  "model_name": "CouncilMed_Attention_v1",
+  "architecture": "MobileNetV2 Encoder + Region Head + Spatial Attention",
+  "input_shape": [
+    224,
+    224,
+    3
+  ],
+  "outputs": [
+    "region_probabilities (10)",
+    "attention_flat (49)"
+  ]
+}

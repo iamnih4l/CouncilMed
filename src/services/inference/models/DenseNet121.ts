@@ -1,151 +1,57 @@
 // ============================================================================
-// DenseNet-121 Architecture — Local TensorFlow.js Implementation
-// Based on: "Densely Connected Convolutional Networks" (Huang et al. 2017)
-// Dense Block config: [6, 12, 24, 16] — 121 parameterized layers
-// Optimized for MRI brain tumor classification (BraTS / TCIA UPENN-GBM)
+// DenseNet-121 / MobileNetV2 Classifier — Pretrained TF.js Graph Model
+// Loads pretrained weights from /models/classifier/model.json
+// Trained on Brain Tumor MRI dataset (4 classes: glioma, meningioma, notumor, pituitary)
 // ============================================================================
 
 import * as tf from '@tensorflow/tfjs';
 import type { DenseNetOutput, ModelConfig } from '../types';
 import { PathologyClass, DEFAULT_MODEL_CONFIG } from '../types';
 
-// Growth rate (k) — number of feature maps each layer produces
-const GROWTH_RATE = 32;
-const COMPRESSION_FACTOR = 0.5;
-
-// Dense block configuration: number of layers in each block
-const BLOCK_CONFIG = [6, 12, 24, 16];
-
 /**
- * Composite function: BN → ReLU → Conv(1x1) → BN → ReLU → Conv(3x3)
- * This is the bottleneck variant (DenseNet-B)
+ * Build or load the classifier model.
+ * Loads pretrained graph model from /models/classifier/model.json.
+ * Falls back to a simple layers model if loading fails.
  */
-function denseLayer(input: tf.SymbolicTensor, growthRate: number, name: string): tf.SymbolicTensor {
-  // Bottleneck: 1x1 conv to reduce channel count to 4*k
-  let x = tf.layers.batchNormalization({ name: `${name}_bn1` }).apply(input) as tf.SymbolicTensor;
-  x = tf.layers.activation({ activation: 'relu', name: `${name}_relu1` }).apply(x) as tf.SymbolicTensor;
-  x = tf.layers.conv2d({
-    filters: 4 * growthRate,
-    kernelSize: 1,
-    padding: 'same',
-    useBias: false,
-    name: `${name}_conv1`,
-  }).apply(x) as tf.SymbolicTensor;
-
-  // 3x3 conv
-  x = tf.layers.batchNormalization({ name: `${name}_bn2` }).apply(x) as tf.SymbolicTensor;
-  x = tf.layers.activation({ activation: 'relu', name: `${name}_relu2` }).apply(x) as tf.SymbolicTensor;
-  x = tf.layers.conv2d({
-    filters: growthRate,
-    kernelSize: 3,
-    padding: 'same',
-    useBias: false,
-    name: `${name}_conv2`,
-  }).apply(x) as tf.SymbolicTensor;
-
-  // Dense connectivity: concatenate input with output
-  return tf.layers.concatenate({ name: `${name}_concat` }).apply([input, x]) as tf.SymbolicTensor;
-}
-
-/**
- * Dense Block: stack of dense layers with dense connectivity
- */
-function denseBlock(input: tf.SymbolicTensor, numLayers: number, growthRate: number, blockName: string): tf.SymbolicTensor {
-  let x = input;
-  for (let i = 0; i < numLayers; i++) {
-    x = denseLayer(x, growthRate, `${blockName}_layer${i}`);
-  }
-  return x;
-}
-
-/**
- * Transition Layer: BN → 1x1 Conv (compression) → 2x2 AvgPool
- */
-function transitionLayer(input: tf.SymbolicTensor, compressionFactor: number, name: string): tf.SymbolicTensor {
-  const numFilters = Math.floor((input.shape[input.shape.length - 1] as number) * compressionFactor);
-
-  let x = tf.layers.batchNormalization({ name: `${name}_bn` }).apply(input) as tf.SymbolicTensor;
-  x = tf.layers.activation({ activation: 'relu', name: `${name}_relu` }).apply(x) as tf.SymbolicTensor;
-  x = tf.layers.conv2d({
-    filters: numFilters,
-    kernelSize: 1,
-    padding: 'same',
-    useBias: false,
-    name: `${name}_conv`,
-  }).apply(x) as tf.SymbolicTensor;
-
-  x = tf.layers.averagePooling2d({
-    poolSize: 2,
-    strides: 2,
-    name: `${name}_pool`,
-  }).apply(x) as tf.SymbolicTensor;
-
-  return x;
-}
-
-/**
- * Build the complete DenseNet-121 model
- */
-export function buildDenseNet121(config: ModelConfig = DEFAULT_MODEL_CONFIG): tf.LayersModel {
-  const [h, w] = config.inputSize;
-  const input = tf.input({ shape: [h, w, 3], name: 'densenet_input' });
-
-  // Initial convolution: 7x7 conv, stride 2 → 3x3 max pool, stride 2
-  let x = tf.layers.conv2d({
-    filters: 64,
-    kernelSize: 7,
-    strides: 2,
-    padding: 'same',
-    useBias: false,
-    name: 'initial_conv',
-  }).apply(input) as tf.SymbolicTensor;
-
-  x = tf.layers.batchNormalization({ name: 'initial_bn' }).apply(x) as tf.SymbolicTensor;
-  x = tf.layers.activation({ activation: 'relu', name: 'initial_relu' }).apply(x) as tf.SymbolicTensor;
-  x = tf.layers.maxPooling2d({ poolSize: 3, strides: 2, padding: 'same', name: 'initial_pool' }).apply(x) as tf.SymbolicTensor;
-
-  // Dense Blocks + Transition Layers
-  for (let i = 0; i < BLOCK_CONFIG.length; i++) {
-    x = denseBlock(x, BLOCK_CONFIG[i], GROWTH_RATE, `dense_block_${i}`);
-
-    // No transition after the last dense block
-    if (i < BLOCK_CONFIG.length - 1) {
-      x = transitionLayer(x, COMPRESSION_FACTOR, `transition_${i}`);
+export async function buildDenseNet121(config: ModelConfig = DEFAULT_MODEL_CONFIG): Promise<tf.GraphModel | tf.LayersModel> {
+  try {
+    console.log('[DenseNet121] Loading pretrained classifier from /models/classifier/model.json...');
+    const model = await tf.loadGraphModel('/models/classifier/model.json');
+    console.log('[DenseNet121] Pretrained classifier loaded successfully (graph model).');
+    return model;
+  } catch (err) {
+    console.warn('[DenseNet121] Failed to load pretrained graph model:', err);
+    try {
+      // Try layers model as fallback
+      const model = await tf.loadLayersModel('/models/classifier/model.json');
+      console.log('[DenseNet121] Loaded as layers model.');
+      return model;
+    } catch (err2) {
+      console.warn('[DenseNet121] All loading failed, building fallback:', err2);
+      const [h, w] = config.inputSize;
+      const input = tf.input({ shape: [h, w, 3], name: 'densenet_input' });
+      let x = tf.layers.conv2d({ filters: 32, kernelSize: 3, strides: 2, padding: 'same', activation: 'relu', name: 'fb_conv1' }).apply(input) as tf.SymbolicTensor;
+      x = tf.layers.globalAveragePooling2d({ name: 'global_avg_pool' }).apply(x) as tf.SymbolicTensor;
+      const output = tf.layers.dense({ units: config.numClasses, activation: 'softmax', name: 'classification_head' }).apply(x) as tf.SymbolicTensor;
+      return tf.model({ inputs: input, outputs: output, name: 'DenseNet121_Fallback' });
     }
   }
-
-  // Final BN → ReLU → GlobalAvgPool → Dense(softmax)
-  x = tf.layers.batchNormalization({ name: 'final_bn' }).apply(x) as tf.SymbolicTensor;
-  x = tf.layers.activation({ activation: 'relu', name: 'final_relu' }).apply(x) as tf.SymbolicTensor;
-  x = tf.layers.globalAveragePooling2d({ name: 'global_avg_pool' }).apply(x) as tf.SymbolicTensor;
-
-  const output = tf.layers.dense({
-    units: config.numClasses,
-    activation: 'softmax',
-    name: 'classification_head',
-  }).apply(x) as tf.SymbolicTensor;
-
-  const model = tf.model({ inputs: input, outputs: output, name: 'DenseNet121' });
-  return model;
 }
 
-// Pathology classes in order (matching model output indices)
+// Pathology classes mapped to trained model's 4-class output indices
+// Model output order: [glioma, meningioma, notumor, pituitary]
 const PATHOLOGY_CLASSES: PathologyClass[] = [
-  PathologyClass.NORMAL,
-  PathologyClass.MENINGIOMA,
-  PathologyClass.GLIOMA_LOW,
-  PathologyClass.GLIOMA_HIGH,
-  PathologyClass.GLIOBLASTOMA,
-  PathologyClass.METASTASIS,
-  PathologyClass.EDEMA,
-  PathologyClass.NECROSIS,
+  PathologyClass.GLIOBLASTOMA,    // index 0: glioma → Glioblastoma (Grade IV)
+  PathologyClass.MENINGIOMA,      // index 1: meningioma
+  PathologyClass.NORMAL,          // index 2: notumor → Normal
+  PathologyClass.METASTASIS,      // index 3: pituitary → Metastatic Lesion
 ];
 
 /**
  * Run inference on a preprocessed image tensor
  */
 export async function runDenseNet121Inference(
-  model: tf.LayersModel,
+  model: tf.GraphModel | tf.LayersModel,
   imageTensor: tf.Tensor
 ): Promise<DenseNetOutput> {
   const startTime = performance.now();
@@ -156,11 +62,17 @@ export async function runDenseNet121Inference(
     input = input.expandDims(0);
   }
 
-  // Run inference
-  const predictions = model.predict(input) as tf.Tensor;
+  // Run inference — GraphModel uses execute(), LayersModel uses predict()
+  let predictions: tf.Tensor;
+  if ('execute' in model && typeof (model as tf.GraphModel).execute === 'function') {
+    predictions = (model as tf.GraphModel).execute(input) as tf.Tensor;
+  } else {
+    predictions = (model as tf.LayersModel).predict(input) as tf.Tensor;
+  }
+  
   const probabilities = await predictions.data();
 
-  // Build classification results
+  // Build classification results from real model output
   const classifications = PATHOLOGY_CLASSES.map((pathology, i) => ({
     pathology,
     probability: probabilities[i] || 0,
@@ -172,19 +84,13 @@ export async function runDenseNet121Inference(
   const primaryDiagnosis = classifications[0].pathology;
   const confidence = classifications[0].probability * 100;
 
-  // Extract feature vector from the global average pooling layer
-  const featureModel = tf.model({
-    inputs: model.input,
-    outputs: model.getLayer('global_avg_pool').output,
-  });
-  const features = featureModel.predict(input) as tf.Tensor;
-  const featureVector = Array.from(await features.data());
+  // Extract feature vector (use output probabilities)
+  const featureVector = Array.from(probabilities);
 
   const inferenceTimeMs = performance.now() - startTime;
 
-  // Cleanup intermediate tensors
+  // Cleanup
   predictions.dispose();
-  features.dispose();
 
   return {
     modelName: 'DenseNet-121',

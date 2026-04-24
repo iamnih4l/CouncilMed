@@ -1,0 +1,13 @@
+{
+  "model_name": "CouncilMed_Segmenter_v1",
+  "architecture": "Lightweight U-Net Encoder + Seg Mask + Region Head",
+  "input_shape": [
+    224,
+    224,
+    3
+  ],
+  "outputs": [
+    "region_probabilities (10)",
+    "segmentation_mask (7x7x1)"
+  ]
+}

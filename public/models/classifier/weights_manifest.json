@@ -1,0 +1,2614 @@
+{
+  "name": "classifier",
+  "format": "councilmed-weights-v1",
+  "numWeights": 272,
+  "totalBytes": 10372368,
+  "weights": [
+    {
+      "name": "w0",
+      "shape": [
+        3,
+        3,
+        3,
+        32
+      ],
+      "dtype": "float32",
+      "byteOffset": 0,
+      "byteLength": 3456
+    },
+    {
+      "name": "w1",
+      "shape": [
+        32
+      ],
+      "dtype": "float32",
+      "byteOffset": 3456,
+      "byteLength": 128
+    },
+    {
+      "name": "w2",
+      "shape": [
+        32
+      ],
+      "dtype": "float32",
+      "byteOffset": 3584,
+      "byteLength": 128
+    },
+    {
+      "name": "w3",
+      "shape": [
+        32
+      ],
+      "dtype": "float32",
+      "byteOffset": 3712,
+      "byteLength": 128
+    },
+    {
+      "name": "w4",
+      "shape": [
+        32
+      ],
+      "dtype": "float32",
+      "byteOffset": 3840,
+      "byteLength": 128
+    },
+    {
+      "name": "w5",
+      "shape": [
+        3,
+        3,
+        32,
+        1
+      ],
+      "dtype": "float32",
+      "byteOffset": 3968,
+      "byteLength": 1152
+    },
+    {
+      "name": "w6",
+      "shape": [
+        32
+      ],
+      "dtype": "float32",
+      "byteOffset": 5120,
+      "byteLength": 128
+    },
+    {
+      "name": "w7",
+      "shape": [
+        32
+      ],
+      "dtype": "float32",
+      "byteOffset": 5248,
+      "byteLength": 128
+    },
+    {
+      "name": "w8",
+      "shape": [
+        32
+      ],
+      "dtype": "float32",
+      "byteOffset": 5376,
+      "byteLength": 128
+    },
+    {
+      "name": "w9",
+      "shape": [
+        32
+      ],
+      "dtype": "float32",
+      "byteOffset": 5504,
+      "byteLength": 128
+    },
+    {
+      "name": "w10",
+      "shape": [
+        1,
+        1,
+        32,
+        16
+      ],
+      "dtype": "float32",
+      "byteOffset": 5632,
+      "byteLength": 2048
+    },
+    {
+      "name": "w11",
+      "shape": [
+        16
+      ],
+      "dtype": "float32",
+      "byteOffset": 7680,
+      "byteLength": 64
+    },
+    {
+      "name": "w12",
+      "shape": [
+        16
+      ],
+      "dtype": "float32",
+      "byteOffset": 7744,
+      "byteLength": 64
+    },
+    {
+      "name": "w13",
+      "shape": [
+        16
+      ],
+      "dtype": "float32",
+      "byteOffset": 7808,
+      "byteLength": 64
+    },
+    {
+      "name": "w14",
+      "shape": [
+        16
+      ],
+      "dtype": "float32",
+      "byteOffset": 7872,
+      "byteLength": 64
+    },
+    {
+      "name": "w15",
+      "shape": [
+        1,
+        1,
+        16,
+        96
+      ],
+      "dtype": "float32",
+      "byteOffset": 7936,
+      "byteLength": 6144
+    },
+    {
+      "name": "w16",
+      "shape": [
+        96
+      ],
+      "dtype": "float32",
+      "byteOffset": 14080,
+      "byteLength": 384
+    },
+    {
+      "name": "w17",
+      "shape": [
+        96
+      ],
+      "dtype": "float32",
+      "byteOffset": 14464,
+      "byteLength": 384
+    },
+    {
+      "name": "w18",
+      "shape": [
+        96
+      ],
+      "dtype": "float32",
+      "byteOffset": 14848,
+      "byteLength": 384
+    },
+    {
+      "name": "w19",
+      "shape": [
+        96
+      ],
+      "dtype": "float32",
+      "byteOffset": 15232,
+      "byteLength": 384
+    },
+    {
+      "name": "w20",
+      "shape": [
+        3,
+        3,
+        96,
+        1
+      ],
+      "dtype": "float32",
+      "byteOffset": 15616,
+      "byteLength": 3456
+    },
+    {
+      "name": "w21",
+      "shape": [
+        96
+      ],
+      "dtype": "float32",
+      "byteOffset": 19072,
+      "byteLength": 384
+    },
+    {
+      "name": "w22",
+      "shape": [
+        96
+      ],
+      "dtype": "float32",
+      "byteOffset": 19456,
+      "byteLength": 384
+    },
+    {
+      "name": "w23",
+      "shape": [
+        96
+      ],
+      "dtype": "float32",
+      "byteOffset": 19840,
+      "byteLength": 384
+    },
+    {
+      "name": "w24",
+      "shape": [
+        96
+      ],
+      "dtype": "float32",
+      "byteOffset": 20224,
+      "byteLength": 384
+    },
+    {
+      "name": "w25",
+      "shape": [
+        1,
+        1,
+        96,
+        24
+      ],
+      "dtype": "float32",
+      "byteOffset": 20608,
+      "byteLength": 9216
+    },
+    {
+      "name": "w26",
+      "shape": [
+        24
+      ],
+      "dtype": "float32",
+      "byteOffset": 29824,
+      "byteLength": 96
+    },
+    {
+      "name": "w27",
+      "shape": [
+        24
+      ],
+      "dtype": "float32",
+      "byteOffset": 29920,
+      "byteLength": 96
+    },
+    {
+      "name": "w28",
+      "shape": [
+        24
+      ],
+      "dtype": "float32",
+      "byteOffset": 30016,
+      "byteLength": 96
+    },
+    {
+      "name": "w29",
+      "shape": [
+        24
+      ],
+      "dtype": "float32",
+      "byteOffset": 30112,
+      "byteLength": 96
+    },
+    {
+      "name": "w30",
+      "shape": [
+        1,
+        1,
+        24,
+        144
+      ],
+      "dtype": "float32",
+      "byteOffset": 30208,
+      "byteLength": 13824
+    },
+    {
+      "name": "w31",
+      "shape": [
+        144
+      ],
+      "dtype": "float32",
+      "byteOffset": 44032,
+      "byteLength": 576
+    },
+    {
+      "name": "w32",
+      "shape": [
+        144
+      ],
+      "dtype": "float32",
+      "byteOffset": 44608,
+      "byteLength": 576
+    },
+    {
+      "name": "w33",
+      "shape": [
+        144
+      ],
+      "dtype": "float32",
+      "byteOffset": 45184,
+      "byteLength": 576
+    },
+    {
+      "name": "w34",
+      "shape": [
+        144
+      ],
+      "dtype": "float32",
+      "byteOffset": 45760,
+      "byteLength": 576
+    },
+    {
+      "name": "w35",
+      "shape": [
+        3,
+        3,
+        144,
+        1
+      ],
+      "dtype": "float32",
+      "byteOffset": 46336,
+      "byteLength": 5184
+    },
+    {
+      "name": "w36",
+      "shape": [
+        144
+      ],
+      "dtype": "float32",
+      "byteOffset": 51520,
+      "byteLength": 576
+    },
+    {
+      "name": "w37",
+      "shape": [
+        144
+      ],
+      "dtype": "float32",
+      "byteOffset": 52096,
+      "byteLength": 576
+    },
+    {
+      "name": "w38",
+      "shape": [
+        144
+      ],
+      "dtype": "float32",
+      "byteOffset": 52672,
+      "byteLength": 576
+    },
+    {
+      "name": "w39",
+      "shape": [
+        144
+      ],
+      "dtype": "float32",
+      "byteOffset": 53248,
+      "byteLength": 576
+    },
+    {
+      "name": "w40",
+      "shape": [
+        1,
+        1,
+        144,
+        24
+      ],
+      "dtype": "float32",
+      "byteOffset": 53824,
+      "byteLength": 13824
+    },
+    {
+      "name": "w41",
+      "shape": [
+        24
+      ],
+      "dtype": "float32",
+      "byteOffset": 67648,
+      "byteLength": 96
+    },
+    {
+      "name": "w42",
+      "shape": [
+        24
+      ],
+      "dtype": "float32",
+      "byteOffset": 67744,
+      "byteLength": 96
+    },
+    {
+      "name": "w43",
+      "shape": [
+        24
+      ],
+      "dtype": "float32",
+      "byteOffset": 67840,
+      "byteLength": 96
+    },
+    {
+      "name": "w44",
+      "shape": [
+        24
+      ],
+      "dtype": "float32",
+      "byteOffset": 67936,
+      "byteLength": 96
+    },
+    {
+      "name": "w45",
+      "shape": [
+        1,
+        1,
+        24,
+        144
+      ],
+      "dtype": "float32",
+      "byteOffset": 68032,
+      "byteLength": 13824
+    },
+    {
+      "name": "w46",
+      "shape": [
+        144
+      ],
+      "dtype": "float32",
+      "byteOffset": 81856,
+      "byteLength": 576
+    },
+    {
+      "name": "w47",
+      "shape": [
+        144
+      ],
+      "dtype": "float32",
+      "byteOffset": 82432,
+      "byteLength": 576
+    },
+    {
+      "name": "w48",
+      "shape": [
+        144
+      ],
+      "dtype": "float32",
+      "byteOffset": 83008,
+      "byteLength": 576
+    },
+    {
+      "name": "w49",
+      "shape": [
+        144
+      ],
+      "dtype": "float32",
+      "byteOffset": 83584,
+      "byteLength": 576
+    },
+    {
+      "name": "w50",
+      "shape": [
+        3,
+        3,
+        144,
+        1
+      ],
+      "dtype": "float32",
+      "byteOffset": 84160,
+      "byteLength": 5184
+    },
+    {
+      "name": "w51",
+      "shape": [
+        144
+      ],
+      "dtype": "float32",
+      "byteOffset": 89344,
+      "byteLength": 576
+    },
+    {
+      "name": "w52",
+      "shape": [
+        144
+      ],
+      "dtype": "float32",
+      "byteOffset": 89920,
+      "byteLength": 576
+    },
+    {
+      "name": "w53",
+      "shape": [
+        144
+      ],
+      "dtype": "float32",
+      "byteOffset": 90496,
+      "byteLength": 576
+    },
+    {
+      "name": "w54",
+      "shape": [
+        144
+      ],
+      "dtype": "float32",
+      "byteOffset": 91072,
+      "byteLength": 576
+    },
+    {
+      "name": "w55",
+      "shape": [
+        1,
+        1,
+        144,
+        32
+      ],
+      "dtype": "float32",
+      "byteOffset": 91648,
+      "byteLength": 18432
+    },
+    {
+      "name": "w56",
+      "shape": [
+        32
+      ],
+      "dtype": "float32",
+      "byteOffset": 110080,
+      "byteLength": 128
+    },
+    {
+      "name": "w57",
+      "shape": [
+        32
+      ],
+      "dtype": "float32",
+      "byteOffset": 110208,
+      "byteLength": 128
+    },
+    {
+      "name": "w58",
+      "shape": [
+        32
+      ],
+      "dtype": "float32",
+      "byteOffset": 110336,
+      "byteLength": 128
+    },
+    {
+      "name": "w59",
+      "shape": [
+        32
+      ],
+      "dtype": "float32",
+      "byteOffset": 110464,
+      "byteLength": 128
+    },
+    {
+      "name": "w60",
+      "shape": [
+        1,
+        1,
+        32,
+        192
+      ],
+      "dtype": "float32",
+      "byteOffset": 110592,
+      "byteLength": 24576
+    },
+    {
+      "name": "w61",
+      "shape": [
+        192
+      ],
+      "dtype": "float32",
+      "byteOffset": 135168,
+      "byteLength": 768
+    },
+    {
+      "name": "w62",
+      "shape": [
+        192
+      ],
+      "dtype": "float32",
+      "byteOffset": 135936,
+      "byteLength": 768
+    },
+    {
+      "name": "w63",
+      "shape": [
+        192
+      ],
+      "dtype": "float32",
+      "byteOffset": 136704,
+      "byteLength": 768
+    },
+    {
+      "name": "w64",
+      "shape": [
+        192
+      ],
+      "dtype": "float32",
+      "byteOffset": 137472,
+      "byteLength": 768
+    },
+    {
+      "name": "w65",
+      "shape": [
+        3,
+        3,
+        192,
+        1
+      ],
+      "dtype": "float32",
+      "byteOffset": 138240,
+      "byteLength": 6912
+    },
+    {
+      "name": "w66",
+      "shape": [
+        192
+      ],
+      "dtype": "float32",
+      "byteOffset": 145152,
+      "byteLength": 768
+    },
+    {
+      "name": "w67",
+      "shape": [
+        192
+      ],
+      "dtype": "float32",
+      "byteOffset": 145920,
+      "byteLength": 768
+    },
+    {
+      "name": "w68",
+      "shape": [
+        192
+      ],
+      "dtype": "float32",
+      "byteOffset": 146688,
+      "byteLength": 768
+    },
+    {
+      "name": "w69",
+      "shape": [
+        192
+      ],
+      "dtype": "float32",
+      "byteOffset": 147456,
+      "byteLength": 768
+    },
+    {
+      "name": "w70",
+      "shape": [
+        1,
+        1,
+        192,
+        32
+      ],
+      "dtype": "float32",
+      "byteOffset": 148224,
+      "byteLength": 24576
+    },
+    {
+      "name": "w71",
+      "shape": [
+        32
+      ],
+      "dtype": "float32",
+      "byteOffset": 172800,
+      "byteLength": 128
+    },
+    {
+      "name": "w72",
+      "shape": [
+        32
+      ],
+      "dtype": "float32",
+      "byteOffset": 172928,
+      "byteLength": 128
+    },
+    {
+      "name": "w73",
+      "shape": [
+        32
+      ],
+      "dtype": "float32",
+      "byteOffset": 173056,
+      "byteLength": 128
+    },
+    {
+      "name": "w74",
+      "shape": [
+        32
+      ],
+      "dtype": "float32",
+      "byteOffset": 173184,
+      "byteLength": 128
+    },
+    {
+      "name": "w75",
+      "shape": [
+        1,
+        1,
+        32,
+        192
+      ],
+      "dtype": "float32",
+      "byteOffset": 173312,
+      "byteLength": 24576
+    },
+    {
+      "name": "w76",
+      "shape": [
+        192
+      ],
+      "dtype": "float32",
+      "byteOffset": 197888,
+      "byteLength": 768
+    },
+    {
+      "name": "w77",
+      "shape": [
+        192
+      ],
+      "dtype": "float32",
+      "byteOffset": 198656,
+      "byteLength": 768
+    },
+    {
+      "name": "w78",
+      "shape": [
+        192
+      ],
+      "dtype": "float32",
+      "byteOffset": 199424,
+      "byteLength": 768
+    },
+    {
+      "name": "w79",
+      "shape": [
+        192
+      ],
+      "dtype": "float32",
+      "byteOffset": 200192,
+      "byteLength": 768
+    },
+    {
+      "name": "w80",
+      "shape": [
+        3,
+        3,
+        192,
+        1
+      ],
+      "dtype": "float32",
+      "byteOffset": 200960,
+      "byteLength": 6912
+    },
+    {
+      "name": "w81",
+      "shape": [
+        192
+      ],
+      "dtype": "float32",
+      "byteOffset": 207872,
+      "byteLength": 768
+    },
+    {
+      "name": "w82",
+      "shape": [
+        192
+      ],
+      "dtype": "float32",
+      "byteOffset": 208640,
+      "byteLength": 768
+    },
+    {
+      "name": "w83",
+      "shape": [
+        192
+      ],
+      "dtype": "float32",
+      "byteOffset": 209408,
+      "byteLength": 768
+    },
+    {
+      "name": "w84",
+      "shape": [
+        192
+      ],
+      "dtype": "float32",
+      "byteOffset": 210176,
+      "byteLength": 768
+    },
+    {
+      "name": "w85",
+      "shape": [
+        1,
+        1,
+        192,
+        32
+      ],
+      "dtype": "float32",
+      "byteOffset": 210944,
+      "byteLength": 24576
+    },
+    {
+      "name": "w86",
+      "shape": [
+        32
+      ],
+      "dtype": "float32",
+      "byteOffset": 235520,
+      "byteLength": 128
+    },
+    {
+      "name": "w87",
+      "shape": [
+        32
+      ],
+      "dtype": "float32",
+      "byteOffset": 235648,
+      "byteLength": 128
+    },
+    {
+      "name": "w88",
+      "shape": [
+        32
+      ],
+      "dtype": "float32",
+      "byteOffset": 235776,
+      "byteLength": 128
+    },
+    {
+      "name": "w89",
+      "shape": [
+        32
+      ],
+      "dtype": "float32",
+      "byteOffset": 235904,
+      "byteLength": 128
+    },
+    {
+      "name": "w90",
+      "shape": [
+        1,
+        1,
+        32,
+        192
+      ],
+      "dtype": "float32",
+      "byteOffset": 236032,
+      "byteLength": 24576
+    },
+    {
+      "name": "w91",
+      "shape": [
+        192
+      ],
+      "dtype": "float32",
+      "byteOffset": 260608,
+      "byteLength": 768
+    },
+    {
+      "name": "w92",
+      "shape": [
+        192
+      ],
+      "dtype": "float32",
+      "byteOffset": 261376,
+      "byteLength": 768
+    },
+    {
+      "name": "w93",
+      "shape": [
+        192
+      ],
+      "dtype": "float32",
+      "byteOffset": 262144,
+      "byteLength": 768
+    },
+    {
+      "name": "w94",
+      "shape": [
+        192
+      ],
+      "dtype": "float32",
+      "byteOffset": 262912,
+      "byteLength": 768
+    },
+    {
+      "name": "w95",
+      "shape": [
+        3,
+        3,
+        192,
+        1
+      ],
+      "dtype": "float32",
+      "byteOffset": 263680,
+      "byteLength": 6912
+    },
+    {
+      "name": "w96",
+      "shape": [
+        192
+      ],
+      "dtype": "float32",
+      "byteOffset": 270592,
+      "byteLength": 768
+    },
+    {
+      "name": "w97",
+      "shape": [
+        192
+      ],
+      "dtype": "float32",
+      "byteOffset": 271360,
+      "byteLength": 768
+    },
+    {
+      "name": "w98",
+      "shape": [
+        192
+      ],
+      "dtype": "float32",
+      "byteOffset": 272128,
+      "byteLength": 768
+    },
+    {
+      "name": "w99",
+      "shape": [
+        192
+      ],
+      "dtype": "float32",
+      "byteOffset": 272896,
+      "byteLength": 768
+    },
+    {
+      "name": "w100",
+      "shape": [
+        1,
+        1,
+        192,
+        64
+      ],
+      "dtype": "float32",
+      "byteOffset": 273664,
+      "byteLength": 49152
+    },
+    {
+      "name": "w101",
+      "shape": [
+        64
+      ],
+      "dtype": "float32",
+      "byteOffset": 322816,
+      "byteLength": 256
+    },
+    {
+      "name": "w102",
+      "shape": [
+        64
+      ],
+      "dtype": "float32",
+      "byteOffset": 323072,
+      "byteLength": 256
+    },
+    {
+      "name": "w103",
+      "shape": [
+        64
+      ],
+      "dtype": "float32",
+      "byteOffset": 323328,
+      "byteLength": 256
+    },
+    {
+      "name": "w104",
+      "shape": [
+        64
+      ],
+      "dtype": "float32",
+      "byteOffset": 323584,
+      "byteLength": 256
+    },
+    {
+      "name": "w105",
+      "shape": [
+        1,
+        1,
+        64,
+        384
+      ],
+      "dtype": "float32",
+      "byteOffset": 323840,
+      "byteLength": 98304
+    },
+    {
+      "name": "w106",
+      "shape": [
+        384
+      ],
+      "dtype": "float32",
+      "byteOffset": 422144,
+      "byteLength": 1536
+    },
+    {
+      "name": "w107",
+      "shape": [
+        384
+      ],
+      "dtype": "float32",
+      "byteOffset": 423680,
+      "byteLength": 1536
+    },
+    {
+      "name": "w108",
+      "shape": [
+        384
+      ],
+      "dtype": "float32",
+      "byteOffset": 425216,
+      "byteLength": 1536
+    },
+    {
+      "name": "w109",
+      "shape": [
+        384
+      ],
+      "dtype": "float32",
+      "byteOffset": 426752,
+      "byteLength": 1536
+    },
+    {
+      "name": "w110",
+      "shape": [
+        3,
+        3,
+        384,
+        1
+      ],
+      "dtype": "float32",
+      "byteOffset": 428288,
+      "byteLength": 13824
+    },
+    {
+      "name": "w111",
+      "shape": [
+        384
+      ],
+      "dtype": "float32",
+      "byteOffset": 442112,
+      "byteLength": 1536
+    },
+    {
+      "name": "w112",
+      "shape": [
+        384
+      ],
+      "dtype": "float32",
+      "byteOffset": 443648,
+      "byteLength": 1536
+    },
+    {
+      "name": "w113",
+      "shape": [
+        384
+      ],
+      "dtype": "float32",
+      "byteOffset": 445184,
+      "byteLength": 1536
+    },
+    {
+      "name": "w114",
+      "shape": [
+        384
+      ],
+      "dtype": "float32",
+      "byteOffset": 446720,
+      "byteLength": 1536
+    },
+    {
+      "name": "w115",
+      "shape": [
+        1,
+        1,
+        384,
+        64
+      ],
+      "dtype": "float32",
+      "byteOffset": 448256,
+      "byteLength": 98304
+    },
+    {
+      "name": "w116",
+      "shape": [
+        64
+      ],
+      "dtype": "float32",
+      "byteOffset": 546560,
+      "byteLength": 256
+    },
+    {
+      "name": "w117",
+      "shape": [
+        64
+      ],
+      "dtype": "float32",
+      "byteOffset": 546816,
+      "byteLength": 256
+    },
+    {
+      "name": "w118",
+      "shape": [
+        64
+      ],
+      "dtype": "float32",
+      "byteOffset": 547072,
+      "byteLength": 256
+    },
+    {
+      "name": "w119",
+      "shape": [
+        64
+      ],
+      "dtype": "float32",
+      "byteOffset": 547328,
+      "byteLength": 256
+    },
+    {
+      "name": "w120",
+      "shape": [
+        1,
+        1,
+        64,
+        384
+      ],
+      "dtype": "float32",
+      "byteOffset": 547584,
+      "byteLength": 98304
+    },
+    {
+      "name": "w121",
+      "shape": [
+        384
+      ],
+      "dtype": "float32",
+      "byteOffset": 645888,
+      "byteLength": 1536
+    },
+    {
+      "name": "w122",
+      "shape": [
+        384
+      ],
+      "dtype": "float32",
+      "byteOffset": 647424,
+      "byteLength": 1536
+    },
+    {
+      "name": "w123",
+      "shape": [
+        384
+      ],
+      "dtype": "float32",
+      "byteOffset": 648960,
+      "byteLength": 1536
+    },
+    {
+      "name": "w124",
+      "shape": [
+        384
+      ],
+      "dtype": "float32",
+      "byteOffset": 650496,
+      "byteLength": 1536
+    },
+    {
+      "name": "w125",
+      "shape": [
+        3,
+        3,
+        384,
+        1
+      ],
+      "dtype": "float32",
+      "byteOffset": 652032,
+      "byteLength": 13824
+    },
+    {
+      "name": "w126",
+      "shape": [
+        384
+      ],
+      "dtype": "float32",
+      "byteOffset": 665856,
+      "byteLength": 1536
+    },
+    {
+      "name": "w127",
+      "shape": [
+        384
+      ],
+      "dtype": "float32",
+      "byteOffset": 667392,
+      "byteLength": 1536
+    },
+    {
+      "name": "w128",
+      "shape": [
+        384
+      ],
+      "dtype": "float32",
+      "byteOffset": 668928,
+      "byteLength": 1536
+    },
+    {
+      "name": "w129",
+      "shape": [
+        384
+      ],
+      "dtype": "float32",
+      "byteOffset": 670464,
+      "byteLength": 1536
+    },
+    {
+      "name": "w130",
+      "shape": [
+        1,
+        1,
+        384,
+        64
+      ],
+      "dtype": "float32",
+      "byteOffset": 672000,
+      "byteLength": 98304
+    },
+    {
+      "name": "w131",
+      "shape": [
+        64
+      ],
+      "dtype": "float32",
+      "byteOffset": 770304,
+      "byteLength": 256
+    },
+    {
+      "name": "w132",
+      "shape": [
+        64
+      ],
+      "dtype": "float32",
+      "byteOffset": 770560,
+      "byteLength": 256
+    },
+    {
+      "name": "w133",
+      "shape": [
+        64
+      ],
+      "dtype": "float32",
+      "byteOffset": 770816,
+      "byteLength": 256
+    },
+    {
+      "name": "w134",
+      "shape": [
+        64
+      ],
+      "dtype": "float32",
+      "byteOffset": 771072,
+      "byteLength": 256
+    },
+    {
+      "name": "w135",
+      "shape": [
+        1,
+        1,
+        64,
+        384
+      ],
+      "dtype": "float32",
+      "byteOffset": 771328,
+      "byteLength": 98304
+    },
+    {
+      "name": "w136",
+      "shape": [
+        384
+      ],
+      "dtype": "float32",
+      "byteOffset": 869632,
+      "byteLength": 1536
+    },
+    {
+      "name": "w137",
+      "shape": [
+        384
+      ],
+      "dtype": "float32",
+      "byteOffset": 871168,
+      "byteLength": 1536
+    },
+    {
+      "name": "w138",
+      "shape": [
+        384
+      ],
+      "dtype": "float32",
+      "byteOffset": 872704,
+      "byteLength": 1536
+    },
+    {
+      "name": "w139",
+      "shape": [
+        384
+      ],
+      "dtype": "float32",
+      "byteOffset": 874240,
+      "byteLength": 1536
+    },
+    {
+      "name": "w140",
+      "shape": [
+        3,
+        3,
+        384,
+        1
+      ],
+      "dtype": "float32",
+      "byteOffset": 875776,
+      "byteLength": 13824
+    },
+    {
+      "name": "w141",
+      "shape": [
+        384
+      ],
+      "dtype": "float32",
+      "byteOffset": 889600,
+      "byteLength": 1536
+    },
+    {
+      "name": "w142",
+      "shape": [
+        384
+      ],
+      "dtype": "float32",
+      "byteOffset": 891136,
+      "byteLength": 1536
+    },
+    {
+      "name": "w143",
+      "shape": [
+        384
+      ],
+      "dtype": "float32",
+      "byteOffset": 892672,
+      "byteLength": 1536
+    },
+    {
+      "name": "w144",
+      "shape": [
+        384
+      ],
+      "dtype": "float32",
+      "byteOffset": 894208,
+      "byteLength": 1536
+    },
+    {
+      "name": "w145",
+      "shape": [
+        1,
+        1,
+        384,
+        64
+      ],
+      "dtype": "float32",
+      "byteOffset": 895744,
+      "byteLength": 98304
+    },
+    {
+      "name": "w146",
+      "shape": [
+        64
+      ],
+      "dtype": "float32",
+      "byteOffset": 994048,
+      "byteLength": 256
+    },
+    {
+      "name": "w147",
+      "shape": [
+        64
+      ],
+      "dtype": "float32",
+      "byteOffset": 994304,
+      "byteLength": 256
+    },
+    {
+      "name": "w148",
+      "shape": [
+        64
+      ],
+      "dtype": "float32",
+      "byteOffset": 994560,
+      "byteLength": 256
+    },
+    {
+      "name": "w149",
+      "shape": [
+        64
+      ],
+      "dtype": "float32",
+      "byteOffset": 994816,
+      "byteLength": 256
+    },
+    {
+      "name": "w150",
+      "shape": [
+        1,
+        1,
+        64,
+        384
+      ],
+      "dtype": "float32",
+      "byteOffset": 995072,
+      "byteLength": 98304
+    },
+    {
+      "name": "w151",
+      "shape": [
+        384
+      ],
+      "dtype": "float32",
+      "byteOffset": 1093376,
+      "byteLength": 1536
+    },
+    {
+      "name": "w152",
+      "shape": [
+        384
+      ],
+      "dtype": "float32",
+      "byteOffset": 1094912,
+      "byteLength": 1536
+    },
+    {
+      "name": "w153",
+      "shape": [
+        384
+      ],
+      "dtype": "float32",
+      "byteOffset": 1096448,
+      "byteLength": 1536
+    },
+    {
+      "name": "w154",
+      "shape": [
+        384
+      ],
+      "dtype": "float32",
+      "byteOffset": 1097984,
+      "byteLength": 1536
+    },
+    {
+      "name": "w155",
+      "shape": [
+        3,
+        3,
+        384,
+        1
+      ],
+      "dtype": "float32",
+      "byteOffset": 1099520,
+      "byteLength": 13824
+    },
+    {
+      "name": "w156",
+      "shape": [
+        384
+      ],
+      "dtype": "float32",
+      "byteOffset": 1113344,
+      "byteLength": 1536
+    },
+    {
+      "name": "w157",
+      "shape": [
+        384
+      ],
+      "dtype": "float32",
+      "byteOffset": 1114880,
+      "byteLength": 1536
+    },
+    {
+      "name": "w158",
+      "shape": [
+        384
+      ],
+      "dtype": "float32",
+      "byteOffset": 1116416,
+      "byteLength": 1536
+    },
+    {
+      "name": "w159",
+      "shape": [
+        384
+      ],
+      "dtype": "float32",
+      "byteOffset": 1117952,
+      "byteLength": 1536
+    },
+    {
+      "name": "w160",
+      "shape": [
+        1,
+        1,
+        384,
+        96
+      ],
+      "dtype": "float32",
+      "byteOffset": 1119488,
+      "byteLength": 147456
+    },
+    {
+      "name": "w161",
+      "shape": [
+        96
+      ],
+      "dtype": "float32",
+      "byteOffset": 1266944,
+      "byteLength": 384
+    },
+    {
+      "name": "w162",
+      "shape": [
+        96
+      ],
+      "dtype": "float32",
+      "byteOffset": 1267328,
+      "byteLength": 384
+    },
+    {
+      "name": "w163",
+      "shape": [
+        96
+      ],
+      "dtype": "float32",
+      "byteOffset": 1267712,
+      "byteLength": 384
+    },
+    {
+      "name": "w164",
+      "shape": [
+        96
+      ],
+      "dtype": "float32",
+      "byteOffset": 1268096,
+      "byteLength": 384
+    },
+    {
+      "name": "w165",
+      "shape": [
+        1,
+        1,
+        96,
+        576
+      ],
+      "dtype": "float32",
+      "byteOffset": 1268480,
+      "byteLength": 221184
+    },
+    {
+      "name": "w166",
+      "shape": [
+        576
+      ],
+      "dtype": "float32",
+      "byteOffset": 1489664,
+      "byteLength": 2304
+    },
+    {
+      "name": "w167",
+      "shape": [
+        576
+      ],
+      "dtype": "float32",
+      "byteOffset": 1491968,
+      "byteLength": 2304
+    },
+    {
+      "name": "w168",
+      "shape": [
+        576
+      ],
+      "dtype": "float32",
+      "byteOffset": 1494272,
+      "byteLength": 2304
+    },
+    {
+      "name": "w169",
+      "shape": [
+        576
+      ],
+      "dtype": "float32",
+      "byteOffset": 1496576,
+      "byteLength": 2304
+    },
+    {
+      "name": "w170",
+      "shape": [
+        3,
+        3,
+        576,
+        1
+      ],
+      "dtype": "float32",
+      "byteOffset": 1498880,
+      "byteLength": 20736
+    },
+    {
+      "name": "w171",
+      "shape": [
+        576
+      ],
+      "dtype": "float32",
+      "byteOffset": 1519616,
+      "byteLength": 2304
+    },
+    {
+      "name": "w172",
+      "shape": [
+        576
+      ],
+      "dtype": "float32",
+      "byteOffset": 1521920,
+      "byteLength": 2304
+    },
+    {
+      "name": "w173",
+      "shape": [
+        576
+      ],
+      "dtype": "float32",
+      "byteOffset": 1524224,
+      "byteLength": 2304
+    },
+    {
+      "name": "w174",
+      "shape": [
+        576
+      ],
+      "dtype": "float32",
+      "byteOffset": 1526528,
+      "byteLength": 2304
+    },
+    {
+      "name": "w175",
+      "shape": [
+        1,
+        1,
+        576,
+        96
+      ],
+      "dtype": "float32",
+      "byteOffset": 1528832,
+      "byteLength": 221184
+    },
+    {
+      "name": "w176",
+      "shape": [
+        96
+      ],
+      "dtype": "float32",
+      "byteOffset": 1750016,
+      "byteLength": 384
+    },
+    {
+      "name": "w177",
+      "shape": [
+        96
+      ],
+      "dtype": "float32",
+      "byteOffset": 1750400,
+      "byteLength": 384
+    },
+    {
+      "name": "w178",
+      "shape": [
+        96
+      ],
+      "dtype": "float32",
+      "byteOffset": 1750784,
+      "byteLength": 384
+    },
+    {
+      "name": "w179",
+      "shape": [
+        96
+      ],
+      "dtype": "float32",
+      "byteOffset": 1751168,
+      "byteLength": 384
+    },
+    {
+      "name": "w180",
+      "shape": [
+        1,
+        1,
+        96,
+        576
+      ],
+      "dtype": "float32",
+      "byteOffset": 1751552,
+      "byteLength": 221184
+    },
+    {
+      "name": "w181",
+      "shape": [
+        576
+      ],
+      "dtype": "float32",
+      "byteOffset": 1972736,
+      "byteLength": 2304
+    },
+    {
+      "name": "w182",
+      "shape": [
+        576
+      ],
+      "dtype": "float32",
+      "byteOffset": 1975040,
+      "byteLength": 2304
+    },
+    {
+      "name": "w183",
+      "shape": [
+        576
+      ],
+      "dtype": "float32",
+      "byteOffset": 1977344,
+      "byteLength": 2304
+    },
+    {
+      "name": "w184",
+      "shape": [
+        576
+      ],
+      "dtype": "float32",
+      "byteOffset": 1979648,
+      "byteLength": 2304
+    },
+    {
+      "name": "w185",
+      "shape": [
+        3,
+        3,
+        576,
+        1
+      ],
+      "dtype": "float32",
+      "byteOffset": 1981952,
+      "byteLength": 20736
+    },
+    {
+      "name": "w186",
+      "shape": [
+        576
+      ],
+      "dtype": "float32",
+      "byteOffset": 2002688,
+      "byteLength": 2304
+    },
+    {
+      "name": "w187",
+      "shape": [
+        576
+      ],
+      "dtype": "float32",
+      "byteOffset": 2004992,
+      "byteLength": 2304
+    },
+    {
+      "name": "w188",
+      "shape": [
+        576
+      ],
+      "dtype": "float32",
+      "byteOffset": 2007296,
+      "byteLength": 2304
+    },
+    {
+      "name": "w189",
+      "shape": [
+        576
+      ],
+      "dtype": "float32",
+      "byteOffset": 2009600,
+      "byteLength": 2304
+    },
+    {
+      "name": "w190",
+      "shape": [
+        1,
+        1,
+        576,
+        96
+      ],
+      "dtype": "float32",
+      "byteOffset": 2011904,
+      "byteLength": 221184
+    },
+    {
+      "name": "w191",
+      "shape": [
+        96
+      ],
+      "dtype": "float32",
+      "byteOffset": 2233088,
+      "byteLength": 384
+    },
+    {
+      "name": "w192",
+      "shape": [
+        96
+      ],
+      "dtype": "float32",
+      "byteOffset": 2233472,
+      "byteLength": 384
+    },
+    {
+      "name": "w193",
+      "shape": [
+        96
+      ],
+      "dtype": "float32",
+      "byteOffset": 2233856,
+      "byteLength": 384
+    },
+    {
+      "name": "w194",
+      "shape": [
+        96
+      ],
+      "dtype": "float32",
+      "byteOffset": 2234240,
+      "byteLength": 384
+    },
+    {
+      "name": "w195",
+      "shape": [
+        1,
+        1,
+        96,
+        576
+      ],
+      "dtype": "float32",
+      "byteOffset": 2234624,
+      "byteLength": 221184
+    },
+    {
+      "name": "w196",
+      "shape": [
+        576
+      ],
+      "dtype": "float32",
+      "byteOffset": 2455808,
+      "byteLength": 2304
+    },
+    {
+      "name": "w197",
+      "shape": [
+        576
+      ],
+      "dtype": "float32",
+      "byteOffset": 2458112,
+      "byteLength": 2304
+    },
+    {
+      "name": "w198",
+      "shape": [
+        576
+      ],
+      "dtype": "float32",
+      "byteOffset": 2460416,
+      "byteLength": 2304
+    },
+    {
+      "name": "w199",
+      "shape": [
+        576
+      ],
+      "dtype": "float32",
+      "byteOffset": 2462720,
+      "byteLength": 2304
+    },
+    {
+      "name": "w200",
+      "shape": [
+        3,
+        3,
+        576,
+        1
+      ],
+      "dtype": "float32",
+      "byteOffset": 2465024,
+      "byteLength": 20736
+    },
+    {
+      "name": "w201",
+      "shape": [
+        576
+      ],
+      "dtype": "float32",
+      "byteOffset": 2485760,
+      "byteLength": 2304
+    },
+    {
+      "name": "w202",
+      "shape": [
+        576
+      ],
+      "dtype": "float32",
+      "byteOffset": 2488064,
+      "byteLength": 2304
+    },
+    {
+      "name": "w203",
+      "shape": [
+        576
+      ],
+      "dtype": "float32",
+      "byteOffset": 2490368,
+      "byteLength": 2304
+    },
+    {
+      "name": "w204",
+      "shape": [
+        576
+      ],
+      "dtype": "float32",
+      "byteOffset": 2492672,
+      "byteLength": 2304
+    },
+    {
+      "name": "w205",
+      "shape": [
+        1,
+        1,
+        576,
+        160
+      ],
+      "dtype": "float32",
+      "byteOffset": 2494976,
+      "byteLength": 368640
+    },
+    {
+      "name": "w206",
+      "shape": [
+        160
+      ],
+      "dtype": "float32",
+      "byteOffset": 2863616,
+      "byteLength": 640
+    },
+    {
+      "name": "w207",
+      "shape": [
+        160
+      ],
+      "dtype": "float32",
+      "byteOffset": 2864256,
+      "byteLength": 640
+    },
+    {
+      "name": "w208",
+      "shape": [
+        160
+      ],
+      "dtype": "float32",
+      "byteOffset": 2864896,
+      "byteLength": 640
+    },
+    {
+      "name": "w209",
+      "shape": [
+        160
+      ],
+      "dtype": "float32",
+      "byteOffset": 2865536,
+      "byteLength": 640
+    },
+    {
+      "name": "w210",
+      "shape": [
+        1,
+        1,
+        160,
+        960
+      ],
+      "dtype": "float32",
+      "byteOffset": 2866176,
+      "byteLength": 614400
+    },
+    {
+      "name": "w211",
+      "shape": [
+        960
+      ],
+      "dtype": "float32",
+      "byteOffset": 3480576,
+      "byteLength": 3840
+    },
+    {
+      "name": "w212",
+      "shape": [
+        960
+      ],
+      "dtype": "float32",
+      "byteOffset": 3484416,
+      "byteLength": 3840
+    },
+    {
+      "name": "w213",
+      "shape": [
+        960
+      ],
+      "dtype": "float32",
+      "byteOffset": 3488256,
+      "byteLength": 3840
+    },
+    {
+      "name": "w214",
+      "shape": [
+        960
+      ],
+      "dtype": "float32",
+      "byteOffset": 3492096,
+      "byteLength": 3840
+    },
+    {
+      "name": "w215",
+      "shape": [
+        3,
+        3,
+        960,
+        1
+      ],
+      "dtype": "float32",
+      "byteOffset": 3495936,
+      "byteLength": 34560
+    },
+    {
+      "name": "w216",
+      "shape": [
+        960
+      ],
+      "dtype": "float32",
+      "byteOffset": 3530496,
+      "byteLength": 3840
+    },
+    {
+      "name": "w217",
+      "shape": [
+        960
+      ],
+      "dtype": "float32",
+      "byteOffset": 3534336,
+      "byteLength": 3840
+    },
+    {
+      "name": "w218",
+      "shape": [
+        960
+      ],
+      "dtype": "float32",
+      "byteOffset": 3538176,
+      "byteLength": 3840
+    },
+    {
+      "name": "w219",
+      "shape": [
+        960
+      ],
+      "dtype": "float32",
+      "byteOffset": 3542016,
+      "byteLength": 3840
+    },
+    {
+      "name": "w220",
+      "shape": [
+        1,
+        1,
+        960,
+        160
+      ],
+      "dtype": "float32",
+      "byteOffset": 3545856,
+      "byteLength": 614400
+    },
+    {
+      "name": "w221",
+      "shape": [
+        160
+      ],
+      "dtype": "float32",
+      "byteOffset": 4160256,
+      "byteLength": 640
+    },
+    {
+      "name": "w222",
+      "shape": [
+        160
+      ],
+      "dtype": "float32",
+      "byteOffset": 4160896,
+      "byteLength": 640
+    },
+    {
+      "name": "w223",
+      "shape": [
+        160
+      ],
+      "dtype": "float32",
+      "byteOffset": 4161536,
+      "byteLength": 640
+    },
+    {
+      "name": "w224",
+      "shape": [
+        160
+      ],
+      "dtype": "float32",
+      "byteOffset": 4162176,
+      "byteLength": 640
+    },
+    {
+      "name": "w225",
+      "shape": [
+        1,
+        1,
+        160,
+        960
+      ],
+      "dtype": "float32",
+      "byteOffset": 4162816,
+      "byteLength": 614400
+    },
+    {
+      "name": "w226",
+      "shape": [
+        960
+      ],
+      "dtype": "float32",
+      "byteOffset": 4777216,
+      "byteLength": 3840
+    },
+    {
+      "name": "w227",
+      "shape": [
+        960
+      ],
+      "dtype": "float32",
+      "byteOffset": 4781056,
+      "byteLength": 3840
+    },
+    {
+      "name": "w228",
+      "shape": [
+        960
+      ],
+      "dtype": "float32",
+      "byteOffset": 4784896,
+      "byteLength": 3840
+    },
+    {
+      "name": "w229",
+      "shape": [
+        960
+      ],
+      "dtype": "float32",
+      "byteOffset": 4788736,
+      "byteLength": 3840
+    },
+    {
+      "name": "w230",
+      "shape": [
+        3,
+        3,
+        960,
+        1
+      ],
+      "dtype": "float32",
+      "byteOffset": 4792576,
+      "byteLength": 34560
+    },
+    {
+      "name": "w231",
+      "shape": [
+        960
+      ],
+      "dtype": "float32",
+      "byteOffset": 4827136,
+      "byteLength": 3840
+    },
+    {
+      "name": "w232",
+      "shape": [
+        960
+      ],
+      "dtype": "float32",
+      "byteOffset": 4830976,
+      "byteLength": 3840
+    },
+    {
+      "name": "w233",
+      "shape": [
+        960
+      ],
+      "dtype": "float32",
+      "byteOffset": 4834816,
+      "byteLength": 3840
+    },
+    {
+      "name": "w234",
+      "shape": [
+        960
+      ],
+      "dtype": "float32",
+      "byteOffset": 4838656,
+      "byteLength": 3840
+    },
+    {
+      "name": "w235",
+      "shape": [
+        1,
+        1,
+        960,
+        160
+      ],
+      "dtype": "float32",
+      "byteOffset": 4842496,
+      "byteLength": 614400
+    },
+    {
+      "name": "w236",
+      "shape": [
+        160
+      ],
+      "dtype": "float32",
+      "byteOffset": 5456896,
+      "byteLength": 640
+    },
+    {
+      "name": "w237",
+      "shape": [
+        160
+      ],
+      "dtype": "float32",
+      "byteOffset": 5457536,
+      "byteLength": 640
+    },
+    {
+      "name": "w238",
+      "shape": [
+        160
+      ],
+      "dtype": "float32",
+      "byteOffset": 5458176,
+      "byteLength": 640
+    },
+    {
+      "name": "w239",
+      "shape": [
+        160
+      ],
+      "dtype": "float32",
+      "byteOffset": 5458816,
+      "byteLength": 640
+    },
+    {
+      "name": "w240",
+      "shape": [
+        1,
+        1,
+        160,
+        960
+      ],
+      "dtype": "float32",
+      "byteOffset": 5459456,
+      "byteLength": 614400
+    },
+    {
+      "name": "w241",
+      "shape": [
+        960
+      ],
+      "dtype": "float32",
+      "byteOffset": 6073856,
+      "byteLength": 3840
+    },
+    {
+      "name": "w242",
+      "shape": [
+        960
+      ],
+      "dtype": "float32",
+      "byteOffset": 6077696,
+      "byteLength": 3840
+    },
+    {
+      "name": "w243",
+      "shape": [
+        960
+      ],
+      "dtype": "float32",
+      "byteOffset": 6081536,
+      "byteLength": 3840
+    },
+    {
+      "name": "w244",
+      "shape": [
+        960
+      ],
+      "dtype": "float32",
+      "byteOffset": 6085376,
+      "byteLength": 3840
+    },
+    {
+      "name": "w245",
+      "shape": [
+        3,
+        3,
+        960,
+        1
+      ],
+      "dtype": "float32",
+      "byteOffset": 6089216,
+      "byteLength": 34560
+    },
+    {
+      "name": "w246",
+      "shape": [
+        960
+      ],
+      "dtype": "float32",
+      "byteOffset": 6123776,
+      "byteLength": 3840
+    },
+    {
+      "name": "w247",
+      "shape": [
+        960
+      ],
+      "dtype": "float32",
+      "byteOffset": 6127616,
+      "byteLength": 3840
+    },
+    {
+      "name": "w248",
+      "shape": [
+        960
+      ],
+      "dtype": "float32",
+      "byteOffset": 6131456,
+      "byteLength": 3840
+    },
+    {
+      "name": "w249",
+      "shape": [
+        960
+      ],
+      "dtype": "float32",
+      "byteOffset": 6135296,
+      "byteLength": 3840
+    },
+    {
+      "name": "w250",
+      "shape": [
+        1,
+        1,
+        960,
+        320
+      ],
+      "dtype": "float32",
+      "byteOffset": 6139136,
+      "byteLength": 1228800
+    },
+    {
+      "name": "w251",
+      "shape": [
+        320
+      ],
+      "dtype": "float32",
+      "byteOffset": 7367936,
+      "byteLength": 1280
+    },
+    {
+      "name": "w252",
+      "shape": [
+        320
+      ],
+      "dtype": "float32",
+      "byteOffset": 7369216,
+      "byteLength": 1280
+    },
+    {
+      "name": "w253",
+      "shape": [
+        320
+      ],
+      "dtype": "float32",
+      "byteOffset": 7370496,
+      "byteLength": 1280
+    },
+    {
+      "name": "w254",
+      "shape": [
+        320
+      ],
+      "dtype": "float32",
+      "byteOffset": 7371776,
+      "byteLength": 1280
+    },
+    {
+      "name": "w255",
+      "shape": [
+        1,
+        1,
+        320,
+        1280
+      ],
+      "dtype": "float32",
+      "byteOffset": 7373056,
+      "byteLength": 1638400
+    },
+    {
+      "name": "w256",
+      "shape": [
+        1280
+      ],
+      "dtype": "float32",
+      "byteOffset": 9011456,
+      "byteLength": 5120
+    },
+    {
+      "name": "w257",
+      "shape": [
+        1280
+      ],
+      "dtype": "float32",
+      "byteOffset": 9016576,
+      "byteLength": 5120
+    },
+    {
+      "name": "w258",
+      "shape": [
+        1280
+      ],
+      "dtype": "float32",
+      "byteOffset": 9021696,
+      "byteLength": 5120
+    },
+    {
+      "name": "w259",
+      "shape": [
+        1280
+      ],
+      "dtype": "float32",
+      "byteOffset": 9026816,
+      "byteLength": 5120
+    },
+    {
+      "name": "w260",
+      "shape": [
+        1280
+      ],
+      "dtype": "float32",
+      "byteOffset": 9031936,
+      "byteLength": 5120
+    },
+    {
+      "name": "w261",
+      "shape": [
+        1280
+      ],
+      "dtype": "float32",
+      "byteOffset": 9037056,
+      "byteLength": 5120
+    },
+    {
+      "name": "w262",
+      "shape": [
+        1280
+      ],
+      "dtype": "float32",
+      "byteOffset": 9042176,
+      "byteLength": 5120
+    },
+    {
+      "name": "w263",
+      "shape": [
+        1280
+      ],
+      "dtype": "float32",
+      "byteOffset": 9047296,
+      "byteLength": 5120
+    },
+    {
+      "name": "w264",
+      "shape": [
+        1280,
+        256
+      ],
+      "dtype": "float32",
+      "byteOffset": 9052416,
+      "byteLength": 1310720
+    },
+    {
+      "name": "w265",
+      "shape": [
+        256
+      ],
+      "dtype": "float32",
+      "byteOffset": 10363136,
+      "byteLength": 1024
+    },
+    {
+      "name": "w266",
+      "shape": [
+        256
+      ],
+      "dtype": "float32",
+      "byteOffset": 10364160,
+      "byteLength": 1024
+    },
+    {
+      "name": "w267",
+      "shape": [
+        256
+      ],
+      "dtype": "float32",
+      "byteOffset": 10365184,
+      "byteLength": 1024
+    },
+    {
+      "name": "w268",
+      "shape": [
+        256
+      ],
+      "dtype": "float32",
+      "byteOffset": 10366208,
+      "byteLength": 1024
+    },
+    {
+      "name": "w269",
+      "shape": [
+        256
+      ],
+      "dtype": "float32",
+      "byteOffset": 10367232,
+      "byteLength": 1024
+    },
+    {
+      "name": "w270",
+      "shape": [
+        256,
+        4
+      ],
+      "dtype": "float32",
+      "byteOffset": 10368256,
+      "byteLength": 4096
+    },
+    {
+      "name": "w271",
+      "shape": [
+        4
+      ],
+      "dtype": "float32",
+      "byteOffset": 10372352,
+      "byteLength": 16
+    }
+  ]
+}

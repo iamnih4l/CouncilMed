@@ -1,3 +1,14 @@
+# Python
+__pycache__/
+*.pyc
+training/data/
+training/output/
+.kaggle/
+.env
+
+# Models (Optional: ignore if they are too big, but 25MB is fine)
+# public/models/
+
 # Logs
 logs
 *.log

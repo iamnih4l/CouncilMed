@@ -12,7 +12,7 @@ import { useDiagnosticEngine } from '../hooks/useDiagnosticEngine';
 import { usePersistentReports } from '../hooks/usePersistentReports';
 import { useWorkstationSettings } from '../hooks/useWorkstationSettings';
 import { BRAIN_REGIONS } from '../services/inference/types';
-import { ClinicalValidationReport } from '../components/ui/ClinicalValidationReport';
+
 import { RadiologyReportView } from '../components/ui/RadiologyReportView';
 import { ShieldCheck, FileText, LayoutDashboard } from 'lucide-react';
 
@@ -97,13 +97,7 @@ export default function MRIAnalysis() {
       id: 'consensus',
       label: 'Council Fusion',
       icon: CheckCircle2,
-      status: state.stage === 'consensus' ? 'running' : (state.stage === 'validation' || state.stage === 'complete' ? 'complete' : 'idle'),
-    },
-    {
-      id: 'validation',
-      label: 'Clinical Validation',
-      icon: ShieldCheck,
-      status: state.stage === 'validation' ? 'running' : (state.stage === 'complete' ? 'complete' : 'idle'),
+      status: state.stage === 'consensus' ? 'running' : (state.stage === 'complete' ? 'complete' : 'idle'),
     },
   ];
 
@@ -453,22 +447,7 @@ export default function MRIAnalysis() {
             </div>
           </GlassCard>
 
-          {/* Clinical Validation Report */}
-          <AnimatePresence>
-            {result && result.validation && (
-              <motion.div
-                initial={{ opacity: 0, scale: 0.95 }}
-                animate={{ opacity: 1, scale: 1 }}
-                transition={{ duration: 0.5, delay: 0.4 }}
-                className="mt-4"
-              >
-                <ClinicalValidationReport 
-                  validationResult={result.validation} 
-                  primaryDiagnosis={result.primaryDiagnosis}
-                />
-              </motion.div>
-            )}
-          </AnimatePresence>
+
         </motion.div>
       </div>
     </div>

@@ -39,28 +39,52 @@ export default function BrainModel({ consensusResult }: BrainModelProps) {
     return new Float32Array(p);
   }, []);
 
-  // Generate anomaly cluster positioned by the Council Consensus result
+  // Generate anomaly cluster based on SwinUNETR volumetric segmentation mask
   const anomalyData = useMemo(() => {
-    const pos = consensusResult?.anomalyPosition || [-1.4, -0.5, 0.8];
-    const radius = consensusResult?.anomalyRadius || 0.5;
-    const centerX = pos[0];
-    const centerY = pos[1];
-    const centerZ = pos[2];
-
-    const p = [];
-    const count = consensusResult ? 1200 : 800;
-
-    for (let i = 0; i < count; i++) {
-      const theta = Math.random() * Math.PI * 2;
-      const phi = Math.acos((Math.random() * 2) - 1);
-      const r = Math.random() * radius;
-
-      const x = centerX + (r * Math.sin(phi) * Math.cos(theta));
-      const y = centerY + (r * Math.sin(phi) * Math.sin(theta));
-      const z = centerZ + (r * Math.cos(phi));
-
-      p.push(x, y, z);
+    if (!consensusResult || !consensusResult.swinResult.segmentationMask) {
+      // Fallback
+      const pos = consensusResult?.anomalyPosition || [-1.4, -0.5, 0.8];
+      const radius = consensusResult?.anomalyRadius || 0.5;
+      const p = [];
+      const count = 1200;
+      for (let i = 0; i < count; i++) {
+        const theta = Math.random() * Math.PI * 2;
+        const phi = Math.acos((Math.random() * 2) - 1);
+        const r = Math.random() * radius;
+        p.push(pos[0] + r * Math.sin(phi) * Math.cos(theta), pos[1] + r * Math.sin(phi) * Math.sin(theta), pos[2] + r * Math.cos(phi));
+      }
+      return new Float32Array(p);
     }
+
+    const mask = consensusResult.swinResult.segmentationMask;
+    const p = [];
+    const maskSize = 8;
+    
+    // Parse the 8x8x8 density grid
+    for (let z = 0; z < maskSize; z++) {
+      for (let y = 0; y < maskSize; y++) {
+        for (let x = 0; x < maskSize; x++) {
+           const density = mask[z][y][x];
+           // Only manifest particles if density is meaningful (>10%)
+           if (density > 0.1) {
+             const numParticles = Math.floor(density * 60); // higher density = more particles
+             for (let i = 0; i < numParticles; i++) {
+               // Map voxel coordinate back to canonical 3D space: inverse of SwinUNETR scale
+               const vx = (x - 4 + Math.random()) * 0.75; 
+               const vy = (y - 4 + Math.random()) * 0.75;
+               const vz = (z - 4 + Math.random()) * 0.75;
+               p.push(vx, vy, vz);
+             }
+           }
+        }
+      }
+    }
+    
+    // Fallback if empty mask
+    if (p.length === 0) {
+      p.push(-1.4, -0.5, 0.8);
+    }
+
     return new Float32Array(p);
   }, [consensusResult]);
 

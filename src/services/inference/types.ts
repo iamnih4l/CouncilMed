@@ -109,7 +109,7 @@ export interface CouncilConsensusResult {
   totalInferenceTimeMs: number;
 
   // Added Clinical Validation
-  validation?: ClinicalValidationResult;
+
   radiologyReport?: RadiologyReportData;
 }
 
@@ -140,24 +140,7 @@ export interface RadiologyReportData {
   recommendations: string[];
 }
 
-// --- Clinical Validation Types ---
 
-export interface ValidationIssue {
-  type: string;
-  description: string;
-  risk: string;
-}
-
-export interface ClinicalValidationResult {
-  detectedIssues: ValidationIssue[];
-  correctionsApplied: string[];
-  status: 'High Confidence' | 'Suspicious' | 'Inconclusive' | 'Invalid Input';
-  patientSafetyOverride: boolean;
-  finalFindings: {
-    patternDetected: 'Yes' | 'No' | 'Uncertain';
-    region: string | null;
-  };
-}
 
 // --- Diagnostic Pipeline State ---
 
@@ -168,7 +151,6 @@ export type PipelineStage =
   | 'attention-running'
   | 'swin-running'
   | 'consensus'
-  | 'validation'
   | 'complete'
   | 'error';
 
@@ -196,6 +178,6 @@ export interface ModelConfig {
 
 export const DEFAULT_MODEL_CONFIG: ModelConfig = {
   inputSize: [224, 224],
-  numClasses: Object.keys(PathologyClass).length, // 8 pathology classes
-  weights: 'random',
+  numClasses: 4, // Matches the 4-class trained brain tumor classifier
+  weights: 'pretrained',
 };

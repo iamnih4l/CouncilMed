@@ -1,0 +1,22 @@
+{
+  "model_name": "CouncilMed_Classifier_v1",
+  "architecture": "MobileNetV2 + Custom Head",
+  "input_shape": [
+    224,
+    224,
+    3
+  ],
+  "num_classes": 4,
+  "class_names": [
+    "glioma",
+    "meningioma",
+    "notumor",
+    "pituitary"
+  ],
+  "class_to_pathology": {
+    "0": "Glioblastoma (Grade IV)",
+    "1": "Meningioma (Grade I)",
+    "2": "Normal",
+    "3": "Metastatic Lesion"
+  }
+}

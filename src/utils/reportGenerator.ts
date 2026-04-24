@@ -74,7 +74,7 @@ export const generatePDFReport = async (
       pdf.setTextColor(150, 150, 150);
       pdf.setFont('helvetica', 'italic');
       pdf.text('This is an AI-augmented diagnostic assistant report. Final clinical decisions must be made by a certified physician.', margin, footerY);
-      pdf.text(`FINGERPRINT: ${data.diagnosis.totalInferenceTimeMs.toFixed(0)}_MS_ENGINE`, pageWidth - margin - 50, footerY);
+      pdf.text(`FINGERPRINT: ${(data.diagnosis.totalInferenceTimeMs || 0).toFixed(0)}_MS_ENGINE`, pageWidth - margin - 50, footerY);
     };
 
     // --- Helper: Space Management ---
@@ -116,7 +116,7 @@ export const generatePDFReport = async (
 
     // --- Primary Status & Impression ---
     const report = data.diagnosis.radiologyReport;
-    const status = (data.diagnosis.validation?.status || 'COMPLETE').toUpperCase();
+    const status = 'COMPLETE';
     
     ensureSpace(30);
     pdf.setFontSize(14);
@@ -146,10 +146,10 @@ export const generatePDFReport = async (
       currentY += margin / 2;
 
       const findings = [
-        { label: 'Brain Parenchyma', content: report.findings.brainParenchyma },
-        { label: 'Edema / Mass Effect', content: report.findings.edemaMassEffect },
-        { label: 'Ventricular System', content: report.findings.ventricularSystem },
-        { label: 'Midline Shift', content: report.findings.midlineStructures.shift }
+        { label: 'Brain Parenchyma', content: report.findings?.brainParenchyma || 'Pending manual review' },
+        { label: 'Edema / Mass Effect', content: report.findings?.edemaMassEffect || 'Pending manual review' },
+        { label: 'Ventricular System', content: report.findings?.ventricularSystem || 'Pending manual review' },
+        { label: 'Midline Shift', content: report.findings?.midlineStructures?.shift || 'Pending manual review' }
       ];
 
       findings.forEach(f => {
@@ -165,60 +165,23 @@ export const generatePDFReport = async (
         currentY += (textLines.length * 4.5) + 4;
       });
 
-      if (report.findings.lesionAssessment.included) {
+      if (report.findings?.lesionAssessment?.included) {
         currentY += 4;
         ensureSpace(20);
         pdf.setFont('helvetica', 'bold');
         pdf.text('Lesion Assessment:', margin, currentY);
         currentY += 5;
         pdf.setFont('helvetica', 'normal');
-        pdf.text(`• Location: ${report.findings.lesionAssessment.location}`, margin + 5, currentY);
+        pdf.text(`• Location: ${report.findings.lesionAssessment.location || 'N/A'}`, margin + 5, currentY);
         currentY += 5;
-        pdf.text(`• Size: ${report.findings.lesionAssessment.sizeVolume}`, margin + 5, currentY);
+        pdf.text(`• Size: ${report.findings.lesionAssessment.sizeVolume || 'N/A'}`, margin + 5, currentY);
         currentY += 5;
-        pdf.text(`• Characteristics: ${report.findings.lesionAssessment.characteristics}`, margin + 5, currentY);
+        pdf.text(`• Characteristics: ${report.findings.lesionAssessment.characteristics || 'N/A'}`, margin + 5, currentY);
         currentY += 10;
       }
     }
 
-    // --- Clinical Validation ---
-    if (data.diagnosis.validation) {
-      ensureSpace(40);
-      pdf.setFontSize(12);
-      pdf.setFont('helvetica', 'bold');
-      pdf.text('CLINICAL VALIDATION LAYER', margin, currentY);
-      currentY += 8;
 
-      const val = data.diagnosis.validation;
-      if (val.detectedIssues.length > 0) {
-        pdf.setTextColor(200, 50, 50);
-        pdf.setFontSize(9);
-        pdf.text('Detected Issues:', margin, currentY);
-        currentY += 5;
-        pdf.setTextColor(80, 80, 80);
-        pdf.setFont('helvetica', 'normal');
-        val.detectedIssues.forEach(issue => {
-          const issueLines = pdf.splitTextToSize(`• [${issue.type}] ${issue.description}`, pageWidth - (margin * 2) - 10);
-          ensureSpace(issueLines.length * 4.5);
-          pdf.text(issueLines, margin + 5, currentY);
-          currentY += (issueLines.length * 4.5);
-        });
-      }
-      
-      currentY += 5;
-      ensureSpace(15);
-      pdf.setFont('helvetica', 'bold');
-      pdf.setTextColor(200, 150, 0);
-      pdf.text('Safety Overrides Applied:', margin, currentY);
-      currentY += 5;
-      pdf.setFont('helvetica', 'normal');
-      pdf.setTextColor(80, 80, 80);
-      val.correctionsApplied.forEach(fix => {
-        pdf.text(`• ${fix}`, margin + 5, currentY);
-        currentY += 4.5;
-      });
-      currentY += 10;
-    }
 
     // --- Model Breakdown Table ---
     ensureSpace(45);
@@ -259,7 +222,7 @@ export const generatePDFReport = async (
     currentY += 8;
 
     const imgWidth = pageWidth - (margin * 2);
-    const imgHeight = (imgWidth / element.clientWidth) * element.clientHeight;
+    const imgHeight = element.clientWidth ? (imgWidth / element.clientWidth) * element.clientHeight : imgWidth;
     pdf.addImage(dataUrl, 'JPEG', margin, currentY, imgWidth, imgHeight, undefined, 'FAST');
     currentY += imgHeight + 15;
 

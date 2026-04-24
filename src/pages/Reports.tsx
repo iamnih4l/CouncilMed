@@ -4,7 +4,6 @@ import { FileText, Download, Share2, Search, Filter, ArrowUpRight, History } fro
 import { StatusBadge } from '../components/ui/StatusBadge';
 import { toast } from 'sonner';
 import { usePersistentReports } from '../hooks/usePersistentReports';
-import { generatePDFReport } from '../utils/reportGenerator';
 
 export default function Reports() {
   const { reports, deleteReport } = usePersistentReports();
