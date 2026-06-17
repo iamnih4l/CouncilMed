@@ -1,0 +1,232 @@
+
+\documentclass[journal]{IEEEtran}
+
+% ==========================================
+% PACKAGES
+% ==========================================
+\usepackage{cite}
+\usepackage{amsmath,amssymb,amsfonts}
+\usepackage{algorithmic}
+\usepackage{graphicx}
+\usepackage{textcomp}
+\usepackage{xcolor}
+\usepackage{booktabs}
+\usepackage{multirow}
+\usepackage{array}
+\usepackage{url}
+\usepackage{hyperref}
+
+\begin{document}
+
+% ==========================================
+% TITLE
+% ==========================================
+\title{
+CouncilAI: A Privacy-Preserving Multi-Modal Medical Diagnostic Framework Using Consensus-Based Ensemble Deep Learning
+}
+
+% ==========================================
+% AUTHORS
+% ==========================================
+\author{
+Mohammed Nihal
+\thanks{
+Mohammed Nihal is pursuing the B.Tech degree in Computer Science and Engineering (Artificial Intelligence and Machine Learning) with Sahyadri College of Engineering and Management, Mangalore, Karnataka, India (e-mail: nihalnihz95@gmail.com).
+}
+}
+
+\maketitle
+
+% ==========================================
+% ABSTRACT
+% ==========================================
+\begin{abstract}
+Artificial intelligence has significantly transformed medical image analysis, enabling faster and more accurate diagnostic support across multiple imaging modalities. However, most existing medical AI solutions rely on cloud-based processing, introducing concerns related to patient privacy, network latency, and dependence on centralized infrastructure. This paper presents CouncilAI, a privacy-preserving web-based diagnostic framework that performs client-side inference for medical imaging modalities including Magnetic Resonance Imaging (MRI), Computed Tomography (CT), and X-ray scans. The proposed architecture utilizes a consensus-driven ensemble pipeline combining DenseNet-121 for deep feature extraction, Attention U-Net for lesion localization, and Swin-UNETR for volumetric segmentation. To ensure responsive user interaction during computationally intensive tasks, inference and visualization workloads are offloaded to Web Workers, enabling efficient parallel processing and smooth three-dimensional visualization. All computations occur locally within the browser, eliminating external transmission of sensitive medical data and supporting a zero-trust security model. The framework demonstrates the feasibility of deploying advanced multi-modal medical AI systems directly on edge devices using modern web technologies while maintaining privacy, scalability, and accessibility.
+\end{abstract}
+
+% ==========================================
+% INDEX TERMS
+% ==========================================
+\begin{IEEEkeywords}
+Medical Imaging, Deep Learning, Ensemble Learning,
+Edge AI, TensorFlow.js, Privacy-Preserving Computing,
+Medical Diagnostics, Client-Side Inference,
+Web Workers, Swin-UNETR, Attention U-Net.
+\end{IEEEkeywords}
+
+% ==========================================
+% I. INTRODUCTION
+% ==========================================
+\section{Introduction}
+
+Artificial Intelligence (AI) has emerged as a transformative technology in medical imaging, enabling automated disease detection, segmentation, classification, and diagnostic assistance. Recent advancements in deep learning have demonstrated remarkable performance in analyzing MRI, CT, and X-ray images, often achieving results comparable to expert radiologists.
+
+Despite these advances, many diagnostic platforms rely heavily on cloud-based infrastructures where medical images are transmitted to remote servers for inference. While effective, this approach introduces several challenges, including patient privacy concerns, increased latency, dependency on internet connectivity, and potential regulatory compliance issues.
+
+To address these limitations, this paper proposes CouncilAI, a privacy-preserving client-side diagnostic framework that performs AI inference directly within the user's browser. The system integrates multiple deep learning architectures through a consensus-based decision-making mechanism to improve diagnostic reliability while ensuring that sensitive patient data never leaves the local device.
+
+The primary contributions of this paper include:
+
+\begin{itemize}
+    \item A privacy-preserving client-side medical diagnostic framework.
+    \item A consensus-based ensemble architecture combining DenseNet-121, Attention U-Net, and Swin-UNETR.
+    \item A Web Worker-based concurrency model for responsive real-time interaction.
+    \item Integrated 3D visualization of diagnostic outputs within a web environment.
+    \item A scalable architecture deployable without dedicated backend inference servers.
+\end{itemize}
+
+% ==========================================
+% II. RELATED WORK
+% ==========================================
+\section{Related Work}
+
+Cloud-based AI diagnostic systems have achieved widespread adoption due to their computational capabilities and centralized deployment models. However, concerns regarding privacy, data ownership, and latency continue to motivate research into edge-based medical AI systems.
+
+Ensemble learning techniques have been extensively explored in healthcare applications. By combining predictions from multiple neural architectures, ensemble approaches reduce model bias and improve robustness compared to single-model systems.
+
+Recent developments in web technologies such as WebGL, WebGPU, TensorFlow.js, and React Three Fiber have enabled advanced visualization and machine learning capabilities directly within browsers. These technologies provide the foundation for deploying medical AI applications without requiring external processing infrastructure.
+
+% ==========================================
+% III. SYSTEM ARCHITECTURE
+% ==========================================
+\section{System Architecture}
+
+The CouncilAI architecture consists of four primary components:
+
+\begin{enumerate}
+    \item Client-side data ingestion and preprocessing.
+    \item Multi-model inference engine.
+    \item Consensus aggregation module.
+    \item Interactive visualization and reporting interface.
+\end{enumerate}
+
+A zero-trust design philosophy ensures that all patient data remains on the user's device throughout the diagnostic workflow.
+
+Web Workers are employed to execute computationally intensive tasks on background threads, preventing UI blocking and improving overall responsiveness. Processed data and intermediate results are stored using IndexedDB for efficient asynchronous access.
+
+% ==========================================
+% IV. CONSENSUS-BASED MULTI-MODEL DIAGNOSTIC PIPELINE
+% ==========================================
+\section{Consensus-Based Multi-Model Diagnostic Pipeline}
+
+The proposed diagnostic pipeline combines multiple neural architectures to leverage their complementary strengths.
+
+\subsection{Data Preprocessing}
+
+Input medical images undergo normalization, resizing, tensor conversion, and modality-specific preprocessing.
+
+\subsection{Feature Extraction}
+
+DenseNet-121 extracts high-level image features while maintaining efficient parameter utilization through dense connectivity.
+
+\subsection{Lesion Localization}
+
+Attention U-Net identifies diagnostically relevant regions using spatial attention mechanisms that improve localization performance.
+
+\subsection{Volumetric Segmentation}
+
+Swin-UNETR performs transformer-based volumetric segmentation to capture long-range contextual dependencies in medical scans.
+
+\subsection{Consensus Aggregation}
+
+Outputs from individual models are combined using weighted consensus scoring. The final diagnostic recommendation is generated based on agreement levels and confidence estimates across all participating models.
+
+% ==========================================
+% V. IMPLEMENTATION DETAILS
+% ==========================================
+\section{Implementation Details}
+
+The framework is implemented using modern web technologies.
+
+\subsection{Frontend Stack}
+
+The user interface is developed using React, TypeScript, and Vite to provide a scalable and responsive application architecture.
+
+\subsection{Machine Learning Integration}
+
+TensorFlow.js enables browser-based execution of deep learning models while leveraging available CPU and GPU acceleration.
+
+\subsection{Visualization Engine}
+
+React Three Fiber and Three.js power interactive 3D rendering and visualization of medical imaging outputs.
+
+\subsection{Report Generation}
+
+Diagnostic reports are automatically generated in PDF format, providing users with downloadable summaries of analysis results.
+
+% ==========================================
+% VI. RESULTS AND PERFORMANCE EVALUATION
+% ==========================================
+\section{Results and Performance Evaluation}
+
+Performance evaluation focuses on computational efficiency, memory utilization, responsiveness, and inference latency.
+
+Key evaluation metrics include:
+
+\begin{itemize}
+    \item Average inference time.
+    \item Browser memory consumption.
+    \item User interface responsiveness.
+    \item Consensus confidence scores.
+    \item 3D rendering performance.
+\end{itemize}
+
+Future experimental studies will compare CouncilAI against traditional cloud-based deployment approaches.
+
+% ==========================================
+% VII. DISCUSSION
+% ==========================================
+\section{Discussion}
+
+The consensus-based architecture reduces dependence on a single model and provides greater robustness for diagnostic decision support.
+
+Client-side deployment significantly improves privacy by eliminating external transmission of medical data. However, performance remains dependent on device hardware capabilities, particularly for computationally intensive volumetric analyses.
+
+Future work should investigate optimization strategies for mobile devices and lower-end hardware platforms.
+
+% ==========================================
+% VIII. CONCLUSION AND FUTURE WORK
+% ==========================================
+\section{Conclusion and Future Work}
+
+This paper introduced CouncilAI, a privacy-preserving client-side diagnostic framework that combines multiple deep learning architectures through a consensus-based approach. By integrating browser-based inference, Web Worker concurrency, and interactive visualization, the system demonstrates the potential of edge-deployed medical AI solutions.
+
+Future research directions include federated learning integration, support for additional imaging modalities such as ultrasound, WebGPU acceleration, and clinical validation using large-scale medical datasets.
+
+% ==========================================
+% REFERENCES
+% ==========================================
+\begin{thebibliography}{00}
+
+\bibitem{b1}
+G. Litjens et al.,
+``A Survey on Deep Learning in Medical Image Analysis,''
+\textit{Medical Image Analysis},
+vol. 42, pp. 60--88, 2017.
+
+\bibitem{b2}
+O. Ronneberger, P. Fischer, and T. Brox,
+``U-Net: Convolutional Networks for Biomedical Image Segmentation,''
+\textit{MICCAI},
+pp. 234--241, 2015.
+
+\bibitem{b3}
+G. Huang, Z. Liu, L. Van Der Maaten, and K. Weinberger,
+``Densely Connected Convolutional Networks,''
+\textit{CVPR},
+pp. 4700--4708, 2017.
+
+\bibitem{b4}
+H. Hatamizadeh et al.,
+``Swin UNETR: Swin Transformers for Semantic Segmentation of Brain Tumors in MRI Images,''
+\textit{arXiv preprint arXiv:2201.01266},
+2022.
+
+\bibitem{b5}
+TensorFlow.js Documentation,
+Available: https://www.tensorflow.org/js
+
+\end{thebibliography}
+
+\end{document}
+```
