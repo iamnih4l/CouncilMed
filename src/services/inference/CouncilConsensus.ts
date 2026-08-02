@@ -233,3 +233,45 @@ export function runCouncilConsensus(
     totalInferenceTimeMs,
   };
 }
+
+/**
+ * Run the Agentic Council Consensus using the LangGraph backend.
+ * Falls back to local deterministic consensus if backend is unreachable.
+ */
+export async function runAgenticCouncilConsensus(
+  densenet: DenseNetOutput,
+  attention: AttentionNetOutput,
+  swin: SwinUNETROutput,
+  modality: Modality = 'MRI'
+): Promise<CouncilConsensusResult> {
+  const localConsensus = runCouncilConsensus(densenet, attention, swin, modality);
+
+  try {
+    const response = await fetch('http://localhost:8000/api/analyze', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({
+        metadata: { modality },
+        densenet_outputs: densenet,
+        attention_outputs: attention,
+        swin_unetr_outputs: swin
+      })
+    });
+
+    if (!response.ok) throw new Error('Backend unavaliable');
+
+    const result = await response.json();
+    
+    // Override local notes with the LLM report
+    localConsensus.councilNotes = [
+      '--- LLM Agent Consensus Report ---',
+      ...result.report.split('\n')
+    ];
+    
+    return localConsensus;
+  } catch (error) {
+    console.warn('Agentic backend failed, falling back to local deterministic consensus.', error);
+    localConsensus.councilNotes.unshift('[Fallback] Local deterministic consensus due to backend failure.');
+    return localConsensus;
+  }
+}

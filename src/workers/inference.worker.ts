@@ -2,7 +2,7 @@ import * as tf from '@tensorflow/tfjs';
 import { buildDenseNet121, runDenseNet121Inference } from '../services/inference/models/DenseNet121';
 import { buildAttentionNet, runAttentionNetInference } from '../services/inference/models/AttentionNet';
 import { buildSwinUNETR, runSwinUNETRInference } from '../services/inference/models/SwinUNETR';
-import { runCouncilConsensus } from '../services/inference/CouncilConsensus';
+import { runCouncilConsensus, runAgenticCouncilConsensus } from '../services/inference/CouncilConsensus';
 import { DEFAULT_MODEL_CONFIG } from '../services/inference/types';
 import type { Modality, CouncilConsensusResult } from '../services/inference/types';
 
@@ -76,7 +76,7 @@ self.onmessage = async (e: MessageEvent<WorkerMessage>) => {
 
       // Consensus
       self.postMessage({ type: 'PROGRESS', stage: 'consensus', progress: 95 });
-      const consensusResult = runCouncilConsensus(densenetResult, attentionResult, swinResult, modality);
+      const consensusResult = await runAgenticCouncilConsensus(densenetResult, attentionResult, swinResult, modality);
 
       tensor.dispose();
       imageBitmap.close();

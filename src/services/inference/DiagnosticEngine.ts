@@ -1,6 +1,7 @@
 // ============================================================================
 // Diagnostic Engine — Orchestrator for the Council AI Pipeline
-// Manages model lifecycle, preprocessing, parallel inference, and consensus
+// Now delegates all inference to the Python backend via /api/inference.
+// The frontend is purely a presentation layer — no TF.js, no heuristics.
 // ============================================================================
 
 import type {
@@ -12,17 +13,11 @@ import type {
 type StateListener = (state: DiagnosticState) => void;
 
 /**
- * DiagnosticEngine — Singleton service that manages the full inference pipeline.
- * Now acts as a proxy to the background Web Worker to keep the UI thread unblocked.
+ * DiagnosticEngine — Singleton service that manages the inference pipeline.
+ * Sends images to the backend for real PyTorch inference.
  */
 class DiagnosticEngine {
-  private worker: Worker | null = null;
-  private initialized = false;
   private listeners: StateListener[] = [];
-  
-  // Keep track of the current Promise resolve/reject to finish processImage
-  private currentResolver: ((result: CouncilConsensusResult) => void) | null = null;
-  private currentRejecter: ((error: Error) => void) | null = null;
 
   private state: DiagnosticState = {
     stage: 'idle',
@@ -58,98 +53,19 @@ class DiagnosticEngine {
   }
 
   isInitialized(): boolean {
-    return this.initialized;
+    // Backend is always "initialized" — no model loading needed on frontend
+    return true;
   }
 
-  /**
-   * Initialize the Web Worker.
-   */
   async initialize(): Promise<void> {
-    if (this.initialized) return;
-
-    return new Promise((resolve, reject) => {
-      try {
-        console.log('[DiagnosticEngine] Initializing Web Worker...');
-        this.worker = new Worker(new URL('../../workers/inference.worker.ts', import.meta.url), { type: 'module' });
-        
-        this.worker.onmessage = (e) => {
-          this.handleWorkerMessage(e.data);
-        };
-        
-        this.worker.onerror = (e) => {
-          console.error('[DiagnosticEngine] Worker error:', e);
-          reject(e);
-        };
-
-        // We listen for READY to resolve
-        const readyListener = (e: MessageEvent) => {
-          if (e.data.type === 'READY') {
-            this.initialized = true;
-            console.log('[DiagnosticEngine] Worker initialized successfully.');
-            this.worker?.removeEventListener('message', readyListener);
-            resolve();
-          }
-        };
-        this.worker.addEventListener('message', readyListener);
-
-        this.worker.postMessage({ type: 'INIT' });
-      } catch (error) {
-        console.error('[DiagnosticEngine] Initialization failed:', error);
-        reject(error);
-      }
-    });
-  }
-
-  // eslint-disable-next-line @typescript-eslint/no-explicit-any
-  private handleWorkerMessage(msg: any) {
-    switch (msg.type) {
-      case 'PROGRESS':
-        this.updateState({
-          stage: msg.stage,
-          progress: msg.progress,
-          ...(msg.statusUpdate || {})
-        });
-        break;
-
-      case 'COMPLETE':
-        this.updateState({
-          stage: 'complete',
-          progress: 100,
-          result: msg.result,
-        });
-        if (this.currentResolver) {
-          this.currentResolver(msg.result);
-          this.currentResolver = null;
-          this.currentRejecter = null;
-        }
-        break;
-
-      case 'ERROR':
-        console.error('[DiagnosticEngine] Pipeline error:', msg.error);
-        this.updateState({
-          stage: 'error',
-          error: msg.error,
-          densenetStatus: this.state.densenetStatus === 'running' ? 'error' : this.state.densenetStatus,
-          attentionStatus: this.state.attentionStatus === 'running' ? 'error' : this.state.attentionStatus,
-          swinStatus: this.state.swinStatus === 'running' ? 'error' : this.state.swinStatus,
-        });
-        if (this.currentRejecter) {
-          this.currentRejecter(new Error(msg.error));
-          this.currentResolver = null;
-          this.currentRejecter = null;
-        }
-        break;
-    }
+    // No-op: backend handles model loading
+    return;
   }
 
   /**
-   * Run the full diagnostic pipeline via Web Worker
+   * Run the full diagnostic pipeline via backend API
    */
   async processImage(file: File, modality: Modality = 'MRI'): Promise<CouncilConsensusResult> {
-    if (!this.initialized || !this.worker) {
-      await this.initialize();
-    }
-
     // Reset state
     this.updateState({
       stage: 'preprocessing',
@@ -161,20 +77,62 @@ class DiagnosticEngine {
       swinStatus: 'idle',
     });
 
-    // We can generate a quick data URL on the main thread for the UI to display the image
+    // Generate data URL for the UI to display the uploaded image
     const dataUrl = await this.readAsDataURL(file);
     this.updateState({ uploadedImage: dataUrl });
 
-    return new Promise((resolve, reject) => {
-      this.currentResolver = resolve;
-      this.currentRejecter = reject;
+    // Simulate pipeline progress while the backend processes
+    this.updateState({ stage: 'preprocessing', progress: 10 });
 
-      this.worker!.postMessage({
-        type: 'PROCESS',
-        file,
-        modality
+    // Build multipart form data
+    const formData = new FormData();
+    formData.append('file', file);
+    formData.append('modality', modality);
+
+    // Show progress stages to keep the UI alive
+    this.updateState({ stage: 'densenet-running', progress: 25, densenetStatus: 'running' });
+
+    try {
+      const response = await fetch('http://localhost:8000/api/inference', {
+        method: 'POST',
+        body: formData,
       });
-    });
+
+      if (!response.ok) {
+        const errorText = await response.text();
+        throw new Error(`Backend inference failed: ${errorText}`);
+      }
+
+      // Simulate progress through the pipeline stages
+      this.updateState({ stage: 'densenet-running', progress: 45, densenetStatus: 'complete' });
+      this.updateState({ stage: 'attention-running', progress: 60, attentionStatus: 'running' });
+
+      const result: CouncilConsensusResult = await response.json();
+
+      this.updateState({ attentionStatus: 'complete' });
+      this.updateState({ stage: 'swin-running', progress: 80, swinStatus: 'running' });
+      this.updateState({ swinStatus: 'complete' });
+      this.updateState({ stage: 'consensus', progress: 95 });
+
+      this.updateState({
+        stage: 'complete',
+        progress: 100,
+        result,
+      });
+
+      return result;
+    } catch (err) {
+      const errorMessage = err instanceof Error ? err.message : String(err);
+      console.error('[DiagnosticEngine] Backend inference error:', errorMessage);
+      this.updateState({
+        stage: 'error',
+        error: errorMessage,
+        densenetStatus: this.state.densenetStatus === 'running' ? 'error' : this.state.densenetStatus,
+        attentionStatus: this.state.attentionStatus === 'running' ? 'error' : this.state.attentionStatus,
+        swinStatus: this.state.swinStatus === 'running' ? 'error' : this.state.swinStatus,
+      });
+      throw err;
+    }
   }
 
   private readAsDataURL(file: File): Promise<string> {

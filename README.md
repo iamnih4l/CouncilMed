@@ -1,75 +1,165 @@
 # CouncilMed AI Diagnostic Workstation
 
-CouncilMed is an enterprise-grade, high-performance web application designed for real-time diagnostic imaging analysis using multi-modal AI consensus. The platform processes MRI, CT, and X-Ray scans securely inside the browser, utilizing TensorFlow.js and a triad of advanced neural architectures (DenseNet-121, Attention U-Net, Swin-UNETR).
+CouncilMed is a production-grade medical imaging analysis platform powered by a multi-model AI consensus architecture. The system processes MRI, CT, and X-Ray scans through three independent neural networks — DenseNet-121 (classification), Grad-CAM Attention (spatial localization), and U-Net (segmentation) — then fuses their outputs into a single diagnostic consensus using a weighted decision-level fusion algorithm.
 
-## 🚀 Key Features
+All inference runs server-side using **PyTorch** on the FastAPI backend. The React frontend is a pure presentation layer — no model weights are loaded in the browser.
 
-- **Multi-Modal Support**: Dedicated, GPU-accelerated 3D analysis for Brain (MRI), Torso (CT), and Skeleton (X-Ray).
-- **Council Consensus AI**: Combines predictions from three separate models to provide a mathematically rigorous, deterministic diagnostic consensus.
-- **Web Worker Acceleration**: The entire TensorFlow.js pipeline operates in a background thread, guaranteeing zero UI blocking and ensuring silky-smooth 60fps 3D rendering.
-- **Pixel-Heuristic Fallbacks**: Employs deterministic computer vision analysis (size, variance, thresholding) to accurately deduce and overlay bounding regions on real uploaded scans.
-- **Client-Side Security**: All AI processing occurs directly on the client machine. No medical images are ever transmitted to a server, fully satisfying zero-trust privacy constraints.
-- **IndexedDB Persistence**: Automatically saves large high-resolution PDF diagnostic reports and scan logs using asynchronous `localforage`, safely bypassing standard 5MB DOM storage limits.
+## Key Features
 
-## 🏗️ Architecture
+- **Multi-Modal Support**: Dedicated analysis pipelines for Brain MRI, Abdominal CT, and Skeletal X-Ray with modality-specific pathology classes and anatomical region maps.
+- **Council Consensus AI**: Three independent models vote on every scan. Spatial agreement, classification consistency, and confidence are mathematically fused into a single diagnostic score.
+- **Real PyTorch Inference**: DenseNet-121 with ImageNet pretrained weights, real Grad-CAM attention heatmaps, and a lightweight U-Net segmentation network. No heuristics, no placeholders.
+- **Offline LLM Policy Advisor**: An integrated reasoning engine (powered by a local Ollama/LM Studio instance) that analyzes model outputs and generates executive reports, priority-ranked recommendations, and natural-language explanations.
+- **3D Visualization**: Interactive Three.js brain, torso, and skeleton models with real-time anomaly overlays driven by segmentation output.
+- **Automated PDF Reports**: RSNA-style structured radiology reports generated and persisted via IndexedDB.
 
-The application is built using a modern, scalable stack optimized for Single Page Application (SPA) delivery:
-- **Frontend**: React 19 + TypeScript + Vite.
-- **Styling**: Tailwind CSS / Vanilla CSS (Modern aesthetic with dynamic animations).
-- **Inference**: `@tensorflow/tfjs` operating inside Web Workers via `createImageBitmap`.
-- **3D Visualization**: `@react-three/fiber` & `@react-three/drei`.
-- **Testing**: Vitest + React Testing Library (100% core logic coverage).
-- **CI/CD**: GitHub Actions integrated for continuous Linter, Build, and Test validation.
+## Architecture
 
-## 🛠️ Getting Started
-
-### Prerequisites
-- **Node.js** (v18+)
-- **npm** or **yarn**
-
-### Local Development Setup
-
-1. **Clone the repository**
-   ```bash
-   git clone https://github.com/iamnih4l/CouncilAI.git
-   cd CouncilAI
-   ```
-
-2. **Install Dependencies**
-   ```bash
-   npm install
-   ```
-
-3. **Run the Development Server**
-   ```bash
-   npm run dev
-   ```
-
-4. **Testing**
-   The application logic is rigorously tested. Run the test suite using:
-   ```bash
-   npm run test
-   ```
-
-## 🐳 Docker Deployment
-
-The application is fully containerized with a highly-optimized, multi-stage Nginx production server, ensuring lightweight delivery, fast asset caching, and proper SPA routing.
-
-```bash
-# Build the production image
-docker build -t councilmed-app .
-
-# Run the container
-docker run -p 80:80 councilmed-app
+```
+┌─────────────────────────────────────────────────┐
+│                 React Frontend                  │
+│  (Upload → Progress UI → 3D Viewer → Reports)  │
+└───────────────────┬─────────────────────────────┘
+                    │  POST /api/inference
+                    │  (multipart: image + modality)
+                    ▼
+┌─────────────────────────────────────────────────┐
+│              FastAPI Backend (Python)            │
+│                                                 │
+│  ┌─────────────┐ ┌──────────┐ ┌──────────────┐ │
+│  │ DenseNet-121│ │ Grad-CAM │ │ U-Net Segm.  │ │
+│  │ (PyTorch)   │ │ Attention│ │ (PyTorch)    │ │
+│  └──────┬──────┘ └─────┬────┘ └──────┬───────┘ │
+│         └───────┬───────┘             │         │
+│                 ▼                     │         │
+│         Council Consensus Fusion ◄────┘         │
+│                 │                               │
+│                 ▼                               │
+│         CouncilConsensusResult (JSON)            │
+│                                                 │
+│  ┌──────────────────────────────────────┐       │
+│  │  Offline LLM Advisor (Ollama)        │       │
+│  │  POST /api/advisor/report            │       │
+│  │  POST /api/advisor/query             │       │
+│  └──────────────────────────────────────┘       │
+└─────────────────────────────────────────────────┘
 ```
 
-## 🧠 Diagnostic Pipeline Breakdown
+## Tech Stack
 
-1. **Preprocessing**: Validates strict file extensions (DICOM, NIfTI, JPEG) and size limits (50MB). Sends `File` object securely to Web Worker.
-2. **Feature Extraction**: Worker executes pixel-heuristic intensity extractions and generates tensor matrices.
-3. **Model Inference**: Parallel processing via DenseNet-121, AttentionNet, and SwinUNETR.
-4. **Consensus Aggregation**: Outputs final probability, confidence scoring, volumetric sizing, and anatomical focal regions.
-5. **Report Generation**: Emits a detailed, persistent diagnostic document into IndexedDB.
+| Layer | Technology |
+|---|---|
+| Frontend | React 19, TypeScript, Vite |
+| Styling | Tailwind CSS, CSS Variables |
+| 3D Rendering | @react-three/fiber, @react-three/drei |
+| Backend | FastAPI, Uvicorn, SQLAlchemy (async) |
+| ML Inference | PyTorch 2.x, TorchVision, Grad-CAM |
+| LLM Reasoning | LangChain, ChatOpenAI (local Ollama/LM Studio) |
+| Database | SQLite (via aiosqlite) |
+| CI/CD | GitHub Actions |
+
+## Getting Started
+
+### Prerequisites
+
+- **Node.js** v18+
+- **Python** 3.12+
+- **PyTorch** 2.x (CPU is sufficient; GPU accelerates inference)
+- **Ollama** or **LM Studio** (optional, for the AI Advisor feature)
+
+### Setup
+
+```bash
+# 1. Clone
+git clone https://github.com/iamnih4l/CouncilAI.git
+cd CouncilAI
+
+# 2. Install frontend dependencies
+npm install
+
+# 3. Install backend dependencies
+cd backend
+pip install -r requirements.txt
+cd ..
+
+# 4. Start both frontend + backend concurrently
+npm run dev
+```
+
+> On first launch, the backend will automatically download DenseNet-121 pretrained weights (~31MB) from PyTorch Hub.
+
+### Test Data
+
+Pre-generated medical scan images are available in the `test_data/` folder:
+
+| File | Modality | Description |
+|---|---|---|
+| `mri_scan.png` | MRI | Brain MRI (axial view) |
+| `ct_scan.png` | CT | Abdominal CT scan |
+| `xray_scan.png` | X-Ray | Skeletal X-ray |
+
+### Running Tests
+
+```bash
+npm run test
+```
+
+## Diagnostic Pipeline
+
+```
+1. Upload       → User uploads image via the frontend UI
+2. Transfer     → Image sent as multipart/form-data to POST /api/inference
+3. Preprocess   → PIL converts to RGB, resizes to 224×224, normalizes
+4. DenseNet-121 → Classification (4 classes per modality)
+5. Grad-CAM     → Spatial attention heatmap from last DenseBlock
+6. U-Net        → Binary segmentation mask → 3D voxel extrusion
+7. Consensus    → Weighted fusion (40% classifier, 30% attention, 30% segmenter)
+8. Response     → JSON result returned to frontend
+9. Visualization→ 3D model overlay + 2D heatmap + clinical notes
+10. PDF Report  → Automatic RSNA-style report generation
+```
+
+## Docker Deployment
+
+```bash
+# Build and run the full stack
+docker build -t councilmed-app .
+docker run -p 80:80 -p 8000:8000 councilmed-app
+```
+
+## Project Structure
+
+```
+CouncilMed/
+├── backend/
+│   ├── inference/              # PyTorch inference engine
+│   │   ├── engine.py           # Pipeline orchestrator
+│   │   └── models/
+│   │       ├── densenet.py     # DenseNet-121 classifier + Grad-CAM
+│   │       ├── attention.py    # Spatial localization from Grad-CAM
+│   │       └── swin_unetr.py  # U-Net segmentation
+│   ├── advisor/                # Offline LLM reasoning module
+│   │   ├── engine.py           # LangChain + ChatOpenAI (local)
+│   │   └── schemas.py          # Pydantic response models
+│   ├── agents/                 # LangGraph multi-agent orchestrator
+│   │   └── orchestrator.py     # Council debate workflow
+│   ├── main.py                 # FastAPI application + endpoints
+│   ├── models.py               # SQLAlchemy ORM models
+│   ├── schemas.py              # Pydantic request/response schemas
+│   └── requirements.txt
+├── src/
+│   ├── components/             # React UI components
+│   ├── pages/                  # Route pages (Dashboard, MRI, CT, X-Ray, Advisor)
+│   ├── services/
+│   │   ├── inference/          # Frontend inference types + DiagnosticEngine
+│   │   └── api/                # API client services
+│   ├── hooks/                  # React hooks
+│   └── workers/                # (Legacy) Web Worker shell
+├── test_data/                  # Sample medical images for testing
+├── docs/                       # Extended documentation
+└── training/                   # Model training scripts
+```
 
 ---
-*Built for production-grade medical analytics.*
+
+*CouncilMed is a diagnostic aid designed to augment clinical workflows. It does not replace professional medical judgment.*

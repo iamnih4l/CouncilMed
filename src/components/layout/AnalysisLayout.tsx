@@ -60,7 +60,8 @@ export default function AnalysisLayout({
 
     toast.info(`${modality} scan received — initiating Council Analysis...`);
     try {
-      const consensusResult = await processImage(file);
+      const mappedModality = modality === 'X-Ray' ? 'XRAY' : modality;
+      const consensusResult = await processImage(file, mappedModality as 'MRI' | 'CT' | 'XRAY');
       
       if (consensusResult) {
         addReport(consensusResult);

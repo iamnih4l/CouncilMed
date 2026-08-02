@@ -1,5 +1,5 @@
 import { NavLink } from 'react-router-dom';
-import { LayoutDashboard, Brain, ActivitySquare, Bone, Settings, FileText, Hexagon } from 'lucide-react';
+import { LayoutDashboard, Brain, ActivitySquare, Bone, Settings, FileText, Hexagon, MessageSquare } from 'lucide-react';
 import { clsx } from 'clsx';
 import { twMerge } from 'tailwind-merge';
 
@@ -9,6 +9,7 @@ const navItems = [
   { name: 'CT (Abdominal)', path: '/ct', icon: ActivitySquare },
   { name: 'X-Ray (Skeletal)', path: '/xray', icon: Bone },
   { name: 'Reports', path: '/reports', icon: FileText },
+  { name: 'AI Advisor', path: '/advisor', icon: MessageSquare },
 ];
 
 export default function Sidebar() {

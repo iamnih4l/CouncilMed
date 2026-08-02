@@ -8,6 +8,7 @@ const MRIAnalysis = React.lazy(() => import('./pages/MRIAnalysis'));
 const CTAnalysis = React.lazy(() => import('./pages/CTAnalysis'));
 const XRayAnalysis = React.lazy(() => import('./pages/XRayAnalysis'));
 const Reports = React.lazy(() => import('./pages/Reports'));
+const Advisor = React.lazy(() => import('./pages/Advisor'));
 const Settings = React.lazy(() => import('./pages/Settings'));
 
 function App() {
@@ -21,6 +22,7 @@ function App() {
             <Route path="ct" element={<CTAnalysis />} />
             <Route path="xray" element={<XRayAnalysis />} />
             <Route path="reports" element={<Reports />} />
+            <Route path="advisor" element={<Advisor />} />
             <Route path="settings" element={<Settings />} />
             <Route path="*" element={<Navigate to="/" replace />} />
           </Route>
