@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from 'react';
-import { motion, AnimatePresence } from 'framer-motion';
-import { Brain, ShieldAlert, CheckCircle2, TrendingUp, ChevronRight, MessageSquare, Loader2, Send } from 'lucide-react';
+import { motion } from 'framer-motion';
+import { Brain, ShieldAlert, TrendingUp, ChevronRight, MessageSquare, Loader2, Send } from 'lucide-react';
 import { GlassCard } from '../components/ui/GlassCard';
 import { advisorApi, type AdvisorReport, type NaturalLanguageQueryResponse } from '../services/api/advisor';
 import { toast } from 'sonner';
@@ -27,6 +27,7 @@ export default function Advisor() {
 
   useEffect(() => {
     generateReport();
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
   const generateReport = async () => {
@@ -56,6 +57,7 @@ export default function Advisor() {
       const res = await advisorApi.queryAdvisor(userQuery, contextData);
       setChatHistory(prev => [...prev, { role: 'advisor', content: res }]);
     } catch (err) {
+      console.error(err);
       toast.error('Query failed.');
     } finally {
       setQuerying(false);

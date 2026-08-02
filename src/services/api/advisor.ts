@@ -24,7 +24,7 @@ export interface NaturalLanguageQueryResponse {
 const API_BASE_URL = 'http://localhost:8000/api/advisor';
 
 export const advisorApi = {
-  async generateReport(scanData: any): Promise<AdvisorReport> {
+  async generateReport(scanData: Record<string, unknown>): Promise<AdvisorReport> {
     const response = await fetch(`${API_BASE_URL}/report`, {
       method: 'POST',
       headers: {
@@ -40,7 +40,7 @@ export const advisorApi = {
     return response.json();
   },
 
-  async queryAdvisor(query: string, contextData: any): Promise<NaturalLanguageQueryResponse> {
+  async queryAdvisor(query: string, contextData: Record<string, unknown>): Promise<NaturalLanguageQueryResponse> {
     const response = await fetch(`${API_BASE_URL}/query`, {
       method: 'POST',
       headers: {
