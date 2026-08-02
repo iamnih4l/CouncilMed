@@ -1,29 +1,15 @@
-from fastapi import FastAPI, HTTPException, Depends, UploadFile, File, Form
+from fastapi import FastAPI, HTTPException, Depends
 from fastapi.middleware.cors import CORSMiddleware
-from fastapi.responses import JSONResponse
 from sqlalchemy.ext.asyncio import AsyncSession
 from sqlalchemy.future import select
 from sqlalchemy.orm import selectinload
 import uvicorn
 from typing import List
-from PIL import Image
-import io
 
 from agents.orchestrator import run_council_debate
 from database import init_db, get_db
 from models import Scan, MLInference, CouncilReport
 from schemas import DiagnosticRequest, ScanResponseSchema
-
-from pydantic import BaseModel
-from advisor.engine import advisor_engine
-from advisor.schemas import AdvisorReportSchema, NaturalLanguageQueryResponse
-
-class AdvisorReportRequest(BaseModel):
-    scan_data: dict
-
-class AdvisorQueryRequest(BaseModel):
-    query: str
-    context_data: dict
 
 app = FastAPI(title="CouncilMed Multi-Agent Backend with Database")
 
@@ -114,50 +100,6 @@ async def get_scans(db: AsyncSession = Depends(get_db)):
     ).limit(50)
     result = await db.execute(stmt)
     return result.scalars().all()
-
-@app.post("/api/advisor/report", response_model=AdvisorReportSchema)
-async def generate_advisor_report(request: AdvisorReportRequest):
-    try:
-        report = advisor_engine.generate_executive_report(request.scan_data)
-        return report
-    except Exception as e:
-        raise HTTPException(status_code=500, detail=str(e))
-
-@app.post("/api/advisor/query", response_model=NaturalLanguageQueryResponse)
-async def query_advisor(request: AdvisorQueryRequest):
-    try:
-        response = advisor_engine.query_natural_language(request.query, request.context_data)
-        return response
-    except Exception as e:
-        raise HTTPException(status_code=500, detail=str(e))
-
-
-# ============================================================================
-# New Image Upload Inference Endpoint — Real PyTorch models
-# ============================================================================
-from inference.engine import inference_engine
-
-@app.post("/api/inference")
-async def run_inference(file: UploadFile = File(...), modality: str = Form("MRI")):
-    """
-    Accept a raw image file + modality string.
-    Run through the real PyTorch Council pipeline (DenseNet + GradCAM + UNet).
-    Return a CouncilConsensusResult JSON matching the frontend interface.
-    """
-    try:
-        # Read file into PIL Image
-        contents = await file.read()
-        image = Image.open(io.BytesIO(contents)).convert("RGB")
-
-        # Run the full inference pipeline
-        result = inference_engine.analyze(image, modality)
-
-        return JSONResponse(content=result)
-    except Exception as e:
-        import traceback
-        traceback.print_exc()
-        raise HTTPException(status_code=500, detail=str(e))
-
 
 if __name__ == "__main__":
     uvicorn.run("main:app", host="0.0.0.0", port=8000, reload=True)

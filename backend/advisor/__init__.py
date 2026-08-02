@@ -1,3 +1,0 @@
-"""
-CouncilAI Policy Advisor Module
-"""

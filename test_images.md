@@ -1,72 +1,35 @@
-# CouncilMed — Test Data Resources
+# CouncilMed MRI Test Resources
 
-## Local Test Images
+This document provides links to medical-grade brain MRI images that can be used to test the CouncilMed multi-model diagnostic pipeline.
 
-Pre-generated medical scan images are available in the `test_data/` directory for quick testing:
+## Direct Image Links (For Quick Testing)
 
-| File | Modality | Description | Expected Diagnosis |
-|---|---|---|---|
-| `mri_scan.png` | MRI | Brain MRI (axial view, normal anatomy) | Normal |
-| `ct_scan.png` | CT | Abdominal CT scan (normal anatomy) | Clear / No Anomalies |
-| `xray_scan.png` | X-Ray | Skeletal X-ray (normal anatomy) | No Fracture Detected |
+Use these URLs in the "Upload MRI" section of the application.
 
-### How to Use
+| Image Type | Description | URL |
+| :--- | :--- | :--- |
+| **T1-Weighted** | Normal brain anatomy, high structural detail. | [Sample T1](https://mrimaster.com/images/anatomy/brain/mri%20brain%20axial%20anatomy%20(1).jpg) |
+| **T2-Weighted** | Good for detecting edema and CSF. | [Sample T2](https://mrimaster.com/images/anatomy/brain/mri%20brain%20axial%20t2%20(1).jpg) |
+| **FLAIR** | Suppresses CSF, excellent for lesion detection. | [Sample FLAIR](https://mrimaster.com/images/pathology/brain/flair%20brain%20(1).jpg) |
+| **Glioblastoma** | High-grade glioma (Grade IV). | [Pathology Sample](https://radiopaedia.org/uploads/radio/0000/0173/GBM-axial-T1-contrast.jpg) |
+| **Meningioma** | Extra-axial tumor (Grade I). | [Pathology Sample 2](https://radiopaedia.org/uploads/radio/0000/0174/Meningioma-axial-T1-contrast.jpg) |
 
-1. Start the application: `npm run dev`
-2. Navigate to the appropriate analysis page (MRI, CT, or X-Ray).
-3. Click **Upload** and select the corresponding image from `test_data/`.
-4. The image is uploaded to the backend (`POST /api/inference`), processed through the PyTorch pipeline, and the Council result is displayed.
+## Clinical Datasets (Bulk Testing)
 
-## Clinical Datasets (Advanced Testing)
+For extensive validation, consider downloading slices from these official repositories:
 
-For validation with real medical data, consider these official repositories:
-
-### Brain MRI
-1. **BraTS (Brain Tumor Segmentation)**: The gold standard for brain tumor AI.
-   - [BraTS on TCIA](https://www.cancerimagingarchive.net/collection/brats/)
-2. **OASIS (Open Access Series of Imaging Studies)**: Longitudinal MRI data.
-   - [OASIS Brains](https://www.oasis-brains.org/)
-3. **IXI Dataset**: ~600 MR images from healthy subjects.
-   - [IXI Dataset](https://brain-development.org/ixi-dataset/)
-
-### Chest / Abdominal CT
-4. **RSNA Intracranial Hemorrhage Detection**: ~700K images.
-   - [RSNA on Kaggle](https://www.kaggle.com/c/rsna-intracranial-hemorrhage-detection)
-5. **Medical Segmentation Decathlon (MSD)**: Multi-organ CT segmentation.
-   - [MSD Challenge](http://medicaldecathlon.com/)
-
-### Skeletal X-Ray
-6. **MURA (Musculoskeletal Radiographs)**: 40K+ upper extremity X-rays.
-   - [MURA on Stanford ML Group](https://stanfordmlgroup.github.io/competitions/mura/)
-7. **FracAtlas**: Fracture classification dataset.
-   - [FracAtlas on GitHub](https://github.com/BoneFractureDetection/FracAtlas)
+1.  **BraTS (Brain Tumor Segmentation)**: The gold standard for AI training.
+    *   [BraTS on TCIA](https://www.cancerimagingarchive.net/collection/brats/)
+2.  **OASIS (Open Access Series of Imaging Studies)**: Longitudinal MRI data.
+    *   [OASIS Brains](https://www.oasis-brains.org/)
+3.  **IXI Dataset**: Nearly 600 MR images from normal, healthy subjects.
+    *   [IXI Dataset](https://brain-development.org/ixi-dataset/)
 
 ## Testing Protocol
 
-### 1. Baseline (Normal Scans)
-Upload the provided normal `mri_scan.png`, `ct_scan.png`, and `xray_scan.png`. Verify that:
-- **DenseNet-121** classifies as the "Normal" class for each modality.
-- **Grad-CAM** attention is diffuse (no focal hot spots).
-- **U-Net** segmentation shows minimal activated voxels.
-- **Council consensus** shows `severity: clear`.
-
-### 2. Pathology Test (Abnormal Scans)
-Download a pathological scan from one of the datasets above. Verify that:
-- **DenseNet-121** identifies the correct pathology class with elevated confidence.
-- **Grad-CAM** attention focuses on the lesion region.
-- **U-Net** produces a non-trivial segmentation mask with measurable volume.
-- **Council notes** describe the findings accurately.
-
-### 3. Report Validation
-After analysis, click **Generate PDF Report** and verify:
-- All anatomical findings map correctly to the clinical report layout.
-- Confidence scores, severity levels, and region labels are present and coherent.
-- The PDF downloads successfully.
-
-### 4. AI Advisor Test
-Navigate to the **AI Advisor** page (`/advisor`) and:
-- Click **Regenerate Report** to generate an executive summary from the context data.
-- Ask questions like "What is the highest risk region?" in the Query Engine.
-- Verify the LLM responds with structured JSON containing actionable recommendations.
-
-> **Note**: The AI Advisor requires a local LLM server (Ollama or LM Studio) to be running.
+1.  **Baseline**: Upload a "Normal" T1/T2 scan. The Council should reach consensus on "Normal" pathology with high agreement.
+2.  **Pathology Stress Test**: Upload the Glioblastoma sample. Verify that:
+    *   **DenseNet** identifies High-Grade Glioma.
+    *   **Attention-Net** localizes the ROI in the correct hemisphere.
+    *   **Swin-UNETR** provides a volumetric estimation.
+3.  **Reporting**: Generate the PDF report after analysis and verify that all anatomical findings are correctly mapped to the clinical layout.

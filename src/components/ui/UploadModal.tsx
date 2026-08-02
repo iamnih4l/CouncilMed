@@ -130,7 +130,7 @@ export function UploadModal({ isOpen, onClose, defaultModality = 'mri' }: Upload
                             : 'bg-white/5 text-zinc-400 border border-white/10 hover:bg-white/10 hover:text-zinc-300'
                         }`}
                       >
-                        {type === 'mri' ? 'MRI (Brain & Spine)' : type === 'ct' ? 'CT (Abdominal)' : 'X-Ray (Skeletal)'}
+                        {type === 'mri' ? 'MRI' : type === 'ct' ? 'CT Scan' : 'X-Ray'}
                       </button>
                     ))}
                   </div>

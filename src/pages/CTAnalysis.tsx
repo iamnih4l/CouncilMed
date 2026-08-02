@@ -5,7 +5,7 @@ export default function CTAnalysis() {
   return (
     <AnalysisLayout 
       title="CT Analysis (Abdominal)"
-      modality="CT (Abdominal)"
+      modality="CT"
       reportElementId="ct-report"
       pdfFilename="CouncilMed_CT_Report.pdf"
       emptyStateText="Upload a CT scan to begin multi-model Council Analysis"
