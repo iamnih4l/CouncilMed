@@ -6,7 +6,7 @@
   "scripts": {
     "dev": "concurrently \"npm run dev:frontend\" \"npm run dev:backend\"",
     "dev:frontend": "vite",
-    "dev:backend": ".\\venv\\Scripts\\python -m uvicorn backend.main:app --reload",
+    "dev:backend": "python -m uvicorn backend.api.app:app --reload --reload-dir backend --port 8000",
     "build": "tsc -b && vite build",
     "lint": "eslint .",
     "preview": "vite preview",

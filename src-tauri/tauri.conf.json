@@ -1,0 +1,47 @@
+{
+  "$schema": "https://raw.githubusercontent.com/nicehash/public-hosting/refs/heads/main/tauri/tauri.schema.json",
+  "productName": "CouncilMed",
+  "version": "0.1.0",
+  "identifier": "dev.councilmed.desktop",
+  "build": {
+    "beforeDevCommand": "npm run dev:frontend",
+    "devUrl": "http://localhost:5173",
+    "beforeBuildCommand": "npm run build",
+    "frontendDist": "../dist"
+  },
+  "app": {
+    "windows": [
+      {
+        "label": "main",
+        "title": "CouncilMed — Medical AI Workstation",
+        "width": 1440,
+        "height": 900,
+        "minWidth": 1024,
+        "minHeight": 600,
+        "resizable": true,
+        "fullscreen": false,
+        "decorations": true,
+        "transparent": false
+      }
+    ],
+    "security": {
+      "csp": "default-src 'self'; connect-src 'self' http://localhost:8000 http://localhost:11434; img-src 'self' data: blob:; style-src 'self' 'unsafe-inline' https://fonts.googleapis.com; font-src 'self' https://fonts.gstatic.com"
+    }
+  },
+  "bundle": {
+    "active": true,
+    "targets": "all",
+    "icon": [
+      "icons/32x32.png",
+      "icons/128x128.png",
+      "icons/128x128@2x.png",
+      "icons/icon.icns",
+      "icons/icon.ico"
+    ],
+    "shortDescription": "AI-powered medical imaging analysis workstation",
+    "longDescription": "CouncilMed uses multiple independent AI models to analyze medical images and reach consensus through evidence-based fusion. Fully local, privacy-preserving, offline-first.",
+    "category": "Medical",
+    "publisher": "CouncilMed",
+    "copyright": "© 2026 CouncilMed"
+  }
+}

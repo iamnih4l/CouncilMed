@@ -1,13 +1,16 @@
 import { NavLink } from 'react-router-dom';
-import { LayoutDashboard, Brain, ActivitySquare, Bone, Settings, FileText, Hexagon } from 'lucide-react';
+import {
+  LayoutDashboard, Scan, FileText,
+  Settings, Hexagon, History, Database,
+} from 'lucide-react';
 import { clsx } from 'clsx';
 import { twMerge } from 'tailwind-merge';
 
 const navItems = [
   { name: 'Dashboard', path: '/', icon: LayoutDashboard },
-  { name: 'MRI (Brain & Spine)', path: '/mri', icon: Brain },
-  { name: 'CT (Abdominal)', path: '/ct', icon: ActivitySquare },
-  { name: 'X-Ray (Skeletal)', path: '/xray', icon: Bone },
+  { name: 'Analysis Workstation', path: '/analyze', icon: Scan },
+  { name: 'Model Registry', path: '/models', icon: Database },
+  { name: 'Analysis History', path: '/history', icon: History },
   { name: 'Reports', path: '/reports', icon: FileText },
 ];
 
@@ -21,9 +24,9 @@ export default function Sidebar() {
         </div>
         <div>
           <h1 className="text-xl font-bold tracking-tight text-white flex items-center">
-            Council<span className="text-[var(--color-accent-cyan)]">AI</span>
+            Council<span className="text-[var(--color-accent-cyan)]">Med</span>
           </h1>
-          <p className="text-[10px] text-zinc-400 font-medium tracking-widest uppercase mt-0.5">Medical Diagnostic</p>
+          <p className="text-[10px] text-zinc-400 font-medium tracking-widest uppercase mt-0.5">Medical AI Workstation</p>
         </div>
       </div>
 
@@ -66,6 +69,13 @@ export default function Sidebar() {
             <Settings className="w-5 h-5" />
             <span>System Settings</span>
         </NavLink>
+
+        {/* Version badge */}
+        <div className="mt-4 px-4 text-[10px] text-zinc-700">
+          <span>CouncilMed v0.1.0</span>
+          <span className="ml-2">•</span>
+          <span className="ml-2">Local-First</span>
+        </div>
       </div>
     </aside>
   );

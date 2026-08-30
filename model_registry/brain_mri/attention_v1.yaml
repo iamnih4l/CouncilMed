@@ -1,0 +1,76 @@
+# =====================================================
+# CouncilMed — Model Manifest: Brain MRI Attention v1
+# =====================================================
+# Council Member B: Attention-based localization model
+# Trained on pseudo Grad-CAM labels from the classifier
+# =====================================================
+
+name: "BrainMRI-Attention-v1"
+model_id: "brain_mri_attention_v1"
+version: "1.0.0"
+description: >
+  MobileNetV2-based attention model with dual output heads:
+  (1) Region classification (10 brain regions, softmax)
+  (2) Spatial attention map (7x7 flattened, sigmoid)
+  Trained on pseudo Grad-CAM labels generated from the trained classifier.
+
+# Architecture
+architecture: "MobileNetV2 Encoder + Region Head (10) + Spatial Attention Conv (7x7)"
+architecture_family: "CNN-Attention"
+framework: "pytorch"
+
+# Task
+tasks:
+  - localization
+  - classification
+modality: "MRI"
+anatomy: "brain"
+
+# Classes (region outputs)
+num_classes: 10
+class_names:
+  - "Frontal Left"
+  - "Frontal Right"
+  - "Temporal Left"
+  - "Temporal Right"
+  - "Parietal Left"
+  - "Parietal Right"
+  - "Occipital Left"
+  - "Occipital Right"
+  - "Brainstem"
+  - "Thalamus"
+
+# Input specification
+input_shape: [224, 224, 3]
+input_format: "HWC"
+input_normalization: "0-1"
+
+# Weights
+weights_path: "model_registry/weights/brain_mri_attention_v1.pth"
+weights_checksum: "73dc3cca7e0fd64d905038001c12df2dd4e0cc99c881d30e6fed1adcd4fda27a"
+weights_size_mb: 9.7
+pretrained_on: "ImageNet (MobileNetV2 base) + Pseudo Grad-CAM labels"
+
+# Validation Metrics
+metrics:
+  dataset: "Pseudo-labeled from classifier Grad-CAM"
+  dataset_size: 800
+  split_method: "85/15 train/val split"
+  validated: true
+  notes: >
+    Trained via training/train_attention_segmenter.py.
+    Uses pseudo labels from the trained classifier's Grad-CAM activations.
+    Region classification accuracy is approximate due to pseudo-label quality.
+    Spatial attention maps are self-supervised (MSE loss on Grad-CAM heatmaps).
+
+# Hardware
+min_ram_gb: 2.0
+min_vram_gb: 0.0
+supports_cpu: true
+supports_cuda: true
+supports_mps: true
+
+# Provenance
+license: "MIT"
+source: "locally trained"
+training_dataset: "Derived from Kaggle Brain Tumor MRI Dataset via Grad-CAM"

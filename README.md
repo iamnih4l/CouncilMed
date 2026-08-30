@@ -4,253 +4,177 @@
 
 **Multi-Model, Agent-Assisted Medical Imaging Analysis Workstation**
 
-*Evidence-based consensus through independent AI council members*
-
-[![Python](https://img.shields.io/badge/Python-3.12-blue?logo=python)](https://python.org)
-[![TypeScript](https://img.shields.io/badge/TypeScript-5.x-blue?logo=typescript)](https://typescriptlang.org)
-[![FastAPI](https://img.shields.io/badge/FastAPI-0.109-green?logo=fastapi)](https://fastapi.tiangolo.com)
-[![PyTorch](https://img.shields.io/badge/PyTorch-2.x-red?logo=pytorch)](https://pytorch.org)
-[![Tests](https://img.shields.io/badge/Tests-82%20passed-brightgreen)]()
-[![License](https://img.shields.io/badge/License-Research-yellow)]()
+*Evidence-based clinical consensus through an ensemble of independent AI council members.*
 
 </div>
 
 ---
 
-## The Core Idea
+## 1. Project Identity
 
-> The same medical image is analyzed independently by multiple AI models. Their outputs are collected as evidence and passed into a Council-based fusion layer. The Council evaluates agreement, disagreement, and uncertainty across models and produces a consensus finding with calibrated confidence — never a single model's opinion.
+CouncilMed is a local-first medical imaging workstation that applies an ensemble "council" of AI models to analyze medical scans. Rather than relying on a single neural network, CouncilMed fuses predictions from multiple independent models using entropy-weighted uncertainty, ensuring that AI-assisted medical insights are robust, traceable, and evidence-based.
 
-CouncilMed is not another "AI diagnosis" tool. It is an **evidence assembly system** — a workstation where multiple deep learning models act as independent council members, each analyzing the same study. Their predictions, probabilities, and uncertainties are fused through an entropy-weighted ensemble, and the result is interpreted by an agentic AI layer augmented with curated medical knowledge.
+## 2. Why This Exists
 
-**Every statement is traceable to specific model evidence. Nothing is fabricated.**
+In medical imaging, single-model AI systems are prone to silent failures and out-of-distribution hallucinations. When a single model makes a confident error, it can mislead clinicians. 
 
----
+CouncilMed exists to solve this "single-point-of-failure" problem. By forcing multiple distinct model architectures to evaluate the same study, the system can identify areas of disagreement and quantify uncertainty before presenting a finding to the human reviewer.
 
-## Architecture
+## 3. What Makes It Different
 
-```
-┌─────────────────────────────────────────────────────────────────┐
-│                    DICOM / Image Input                          │
-│                    ↓                                            │
-│    ┌──────────────────────────────────────────────┐             │
-│    │         Model Registry (YAML Manifests)       │             │
-│    │  ┌──────────┐ ┌──────────┐ ┌──────────────┐  │             │
-│    │  │DenseNet  │ │Attention │ │  Swin-UNETR  │  │             │
-│    │  │  -121    │ │   -Net   │ │              │  │             │
-│    │  └────┬─────┘ └────┬─────┘ └──────┬───────┘  │             │
-│    └───────┼────────────┼──────────────┼──────────┘             │
-│            │            │              │                        │
-│            ▼            ▼              ▼                        │
-│    ┌──────────────────────────────────────────┐                 │
-│    │     Council Engine (Uncertainty-Weighted)  │                │
-│    │     → Entropy calibration                  │                │
-│    │     → Agreement scoring                    │                │
-│    │     → Severity classification              │                │
-│    │     → Human review determination           │                │
-│    └────────────────┬───────────────────────────┘               │
-│                     │                                           │
-│            ┌────────┴────────┐                                  │
-│            ▼                 ▼                                  │
-│    ┌──────────────┐  ┌──────────────┐                          │
-│    │ Agent (Ollama)│  │   Report     │                          │
-│    │ + Knowledge   │  │  Generator   │                          │
-│    │   RAG Context │  │              │                          │
-│    └──────────────┘  └──────────────┘                          │
-│                                                                 │
-│    ┌──────────────────────────────────────────┐                 │
-│    │           SQLite + Audit Trail            │                │
-│    └──────────────────────────────────────────┘                 │
-└─────────────────────────────────────────────────────────────────┘
+- **Uncertainty-Weighted Fusion**: It doesn't just average model outputs. The Council Engine uses Shannon entropy to weight each model's contribution based on its calculated confidence.
+- **Agentic Explanation Layer**: If enabled, an integrated local LLM (Ollama) grounds the mathematical model outputs in actual clinical guidelines retrieved from a vector database (ChromaDB).
+- **Traceable Evidence**: Every final insight explicitly links back to the specific "Council Member" (model) that generated the probability. Nothing is fabricated.
+
+## 4. Key Features
+
+- 🧠 **Dynamic Model Registry**: Easily plug-and-play new models via YAML manifests without altering core code.
+- 🖼️ **Clinical Image Viewer**: Integrated workstation UI to examine scans alongside Grad-CAM explainability heatmaps.
+- 🔒 **Local-First Architecture**: 100% of the processing (PyTorch + LLM + Vector DB) happens on the local machine. Zero PHI data leakage.
+- 📊 **SQLite Audit Trail**: Every inference, model disagreement, and human review decision is recorded persistently.
+
+## 5. Architecture
+
+```mermaid
+flowchart LR
+    A[User UI] --> B[FastAPI Backend]
+    B --> C[PyTorch Council]
+    C -->|Member 1| D[Council Engine]
+    C -->|Member 2| D
+    C -->|Member 3| D
+    D --> E[Consensus Fusion]
+    E --> F[Agentic RAG]
+    F --> A
 ```
 
----
+*(For a more detailed breakdown, see [`docs/ARCHITECTURE.md`](docs/ARCHITECTURE.md))*
 
-## Key Properties
+## 6. How It Works
 
-| Property | Implementation |
-|---|---|
-| **Multi-Model Inference** | Each model runs independently via PyTorch/ONNX/Keras — not simulated |
-| **Uncertainty-Weighted Fusion** | Shannon entropy calibrates each model's contribution |
-| **Evidence Traceability** | Every finding traces to specific model predictions + probabilities |
-| **Knowledge-Augmented Agent** | Ollama LLM with ChromaDB RAG context for clinical interpretation |
-| **Local-First / Offline** | All processing on the local machine — no cloud, no PHI leakage |
-| **Human Review Always Required** | System never claims diagnostic authority |
-| **Structured Reports** | Evidence-based clinical reports, not fabricated text |
-| **Full Audit Trail** | Every analysis, review, and action logged in SQLite |
+1. **Upload**: A medical image is dropped into the React UI with a selected Modality (e.g. Brain MRI).
+2. **Registry Lookup**: The backend loads all PyTorch `.pth` models registered for that specific modality.
+3. **Inference**: The image is passed through the neural networks concurrently.
+4. **Fusion**: The Council Engine evaluates the logits, calculates entropy, and produces a consensus.
+5. **Agentic RAG**: (Optional) A local LLM retrieves context from ChromaDB and explains the consensus.
+6. **Review**: The clinician reviews the models' evidence and the AI explanation on the workstation.
 
----
+## 7. Technology Stack
 
-## Quick Start
+- **Frontend**: React, TypeScript, Vite, Tailwind CSS, Framer Motion
+- **Backend**: Python 3.10+, FastAPI, Uvicorn
+- **AI/ML**: PyTorch (Inference), Torchvision
+- **Agentic Logic**: Ollama (Local LLM), LangChain, ChromaDB (Vector RAG)
+- **Database**: SQLite (Local Audit Trail)
+
+## 8. Project Structure
+
+```text
+CouncilMed/
+├── backend/               # Python FastAPI backend & AI pipelines
+│   ├── agents/            # Ollama LLM integration
+│   ├── api/               # REST Endpoints
+│   ├── council/           # Entropy-fusion engine
+│   ├── database/          # SQLite models
+│   └── inference/         # PyTorch execution
+├── docs/                  # Architectural documentation
+├── model_registry/        # YAML manifests & PyTorch .pth weights
+├── src/                   # React frontend application
+└── package.json           # Node scripts and dependencies
+```
+
+## 9. Installation & Setup
 
 ### Prerequisites
-
-- Python 3.10+
 - Node.js 18+
-- (Optional) CUDA-capable GPU for faster inference
-- (Optional) [Ollama](https://ollama.ai) for agentic AI reasoning
-- (Optional) Rust toolchain for Tauri desktop build
+- Python 3.10+
+- (Optional) CUDA-capable GPU for faster PyTorch inference
+- (Optional) [Ollama](https://ollama.com/) running locally for Agentic features
 
-### Setup
+### Setup Instructions
 
+1. **Clone the repository:**
 ```bash
-# Clone
 git clone https://github.com/iamnih4l/CouncilMed.git
 cd CouncilMed
+```
 
-# Backend
-pip install -r backend/requirements.txt
-
-# Frontend
+2. **Install Frontend Dependencies:**
+```bash
 npm install
+```
 
-# Validate environment
+3. **Install Backend Dependencies:**
+```bash
+python -m pip install -r backend/requirements.txt
+```
+
+4. **Initialize the System (Models & Database):**
+```bash
 python scripts/startup.py --check
 ```
 
-### Run
-
+5. **Start the Application:**
 ```bash
-# Start backend (port 8000)
-python -m uvicorn backend.api.app:app --reload --port 8000
-
-# Start frontend (port 5173)
 npm run dev
-
-# Or use the startup script
-python scripts/startup.py
 ```
+*This command uses `concurrently` to launch both the Vite frontend (port 5173) and the FastAPI backend (port 8000).*
 
-### API Documentation
+## 10. Environment Variables
 
-Once the backend is running, visit: http://localhost:8000/docs
+Currently, CouncilMed operates entirely locally without requiring API keys.
+No `.env` file is required for default execution.
 
----
+## 11. Usage
 
-## Project Structure
+1. Open `http://localhost:5173` in your browser.
+2. Select a modality from the dropdown (e.g., "Brain MRI").
+3. Drop a `.jpg` or `.png` medical scan into the dropzone.
+4. Watch as the Council Members evaluate the image and generate a fused consensus.
 
-```
-CouncilMed/
-├── backend/
-│   ├── api/                  # FastAPI endpoints + Pydantic schemas
-│   │   ├── app.py            # 11 API endpoints
-│   │   └── schemas.py        # Request/response models
-│   ├── council/              # Evidence fusion engine
-│   │   ├── evidence.py       # Core data contracts
-│   │   └── engine.py         # Uncertainty-weighted ensemble
-│   ├── inference/            # Multi-framework model inference
-│   │   ├── registry.py       # YAML manifest system
-│   │   └── engine.py         # PyTorch/ONNX/Keras inference
-│   ├── agents/               # Agentic AI reasoning
-│   │   └── orchestrator.py   # Ollama + RAG context
-│   ├── knowledge/            # Knowledge RAG system
-│   │   └── rag.py            # ChromaDB + baseline fallback
-│   ├── reports/              # Structured clinical reports
-│   │   └── generator.py      # Evidence-based report generation
-│   ├── explainability/       # Grad-CAM heatmaps
-│   │   └── gradcam.py        # Grad-CAM / Grad-CAM++
-│   ├── dicom/                # DICOM processing
-│   │   └── pipeline.py       # pydicom parsing + metadata
-│   ├── database/             # Async SQLite persistence
-│   │   ├── models.py         # 8-table schema
-│   │   └── engine.py         # SQLAlchemy async engine
-│   └── pipeline.py           # Full pipeline orchestration
-├── src/                      # React + TypeScript frontend
-│   ├── pages/                # 6 workstation pages
-│   ├── components/           # Medical viewer, evidence panel
-│   ├── hooks/                # useCouncilAnalysis
-│   └── services/             # Type-safe API client
-├── src-tauri/                # Tauri desktop shell (Rust)
-├── model_registry/           # YAML model manifests
-├── data/knowledge/           # Medical knowledge base
-├── tests/
-│   ├── unit/                 # 65 unit tests
-│   └── integration/          # 17 integration tests
-└── scripts/
-    ├── startup.py            # Environment validation
-    └── convert_model.py      # Keras → ONNX converter
-```
+## 12. API Documentation
 
----
+The backend exposes a FastAPI REST API. Once running, visit `http://localhost:8000/docs` to view the interactive Swagger UI.
 
-## API Endpoints
+**Key Endpoint:**
+`POST /api/analyze/upload`
+- Accepts `multipart/form-data` with an image `file`.
+- Query params: `modality` (e.g. MRI), `anatomy` (e.g. brain).
 
-| Method | Path | Description |
-|---|---|---|
-| `GET` | `/api/health` | System health + device info |
-| `POST` | `/api/analyze` | Run council analysis (file path) |
-| `POST` | `/api/analyze/upload` | Run council analysis (file upload) |
-| `GET` | `/api/analyses` | List analysis history |
-| `GET` | `/api/models` | List registered models |
-| `POST` | `/api/review` | Submit human review decision |
-| `POST` | `/api/reports/generate` | Generate structured clinical report |
-| `GET` | `/api/reports/{id}` | Retrieve existing report |
-| `GET` | `/api/knowledge/status` | Knowledge base status |
-| `POST` | `/api/knowledge/ingest` | Ingest knowledge files |
-| `POST` | `/api/knowledge/query` | Semantic knowledge retrieval |
+## 13. Demo
 
----
+*The Workstation UI provides a complete clinical dashboard for evidence review.*
 
-## Testing
+## 14. Technical Details
 
+- **Dummy Weights Warning**: The current repository uses `scripts/generate_weights.py` to create structural PyTorch models with random initialization (`weights=None`). **To achieve clinical accuracy, these `.pth` files must be replaced with genuinely trained models.**
+- **Entropy Weighting**: The fusion engine calculates $H(p) = - \sum p_i \log(p_i)$ to discount models that are unsure (high entropy) and boost models that are confident (low entropy).
+
+## 15. Security & Privacy
+
+This application is designed specifically for HIPAA-compliant environments by enforcing a strict **offline-first** architecture. No image data is transmitted to the cloud.
+
+## 16. Testing
+
+The repository uses standard ESLint and TypeScript compilation for the frontend.
 ```bash
-# Run all tests
-python -m pytest tests/ -v
-
-# Unit tests only
-python -m pytest tests/unit/ -v
-
-# Integration tests only
-python -m pytest tests/integration/ -v
+npm run lint
+npm run build
 ```
 
-**Current: 82 passed, 4 skipped** (ChromaDB tests skipped when not installed)
+## 17. Deployment
 
----
+CouncilMed is designed to be run as a local workstation application. While it can be deployed to a cloud server using Docker, doing so would require securing the FastAPI endpoints and configuring a production WGSI server (like Gunicorn) in place of Uvicorn.
 
-## Adding Models to the Council
+## 18. Roadmap
 
-Create a YAML manifest in `model_registry/`:
+- [ ] **DICOM Support**: Complete the `pydicom` integration pipeline.
+- [ ] **Tauri Desktop**: Finalize the Rust/Tauri build for standalone desktop distribution without Node.js.
+- [ ] **Real Weights**: Train and integrate actual PyTorch weights for the Brain MRI pipeline.
 
-```yaml
-model_id: my-custom-model
-name: Custom ResNet
-version: 1.0.0
-architecture: resnet50
-framework: pytorch           # pytorch | onnx | keras
-modality: MRI
-anatomy: brain
-class_names:
-  - Normal
-  - Glioblastoma
-  - Meningioma
-  - Pituitary
-weights:
-  path: model_registry/weights/custom_model.pth
-  sha256: <hash>
-preprocessing:
-  input_size: [224, 224]
-  normalize_mean: [0.485, 0.456, 0.406]
-  normalize_std: [0.229, 0.224, 0.225]
-```
+## 19. Contributing
 
-The registry auto-discovers manifests on startup. Models are validated against their SHA-256 checksums before loading.
+Contributions are welcome, particularly in expanding the `model_registry` with new clinical architectures. Please ensure that any new models include a complete YAML manifest defining their modality, framework, and exact tensor shapes.
 
----
+## 20. License
 
-## Disclaimer
-
-> **CouncilMed is a research tool and does NOT provide medical diagnoses.** All AI-generated findings are supplementary and MUST be reviewed by qualified clinicians before any clinical decision is made. The system explicitly flags all outputs as requiring human review and never claims diagnostic authority.
-
----
-
-## Citation
-
-```bibtex
-@software{councilmed2026,
-  title={CouncilMed: A Multi-Model, Agent-Assisted Framework for Consensus-Driven Medical Image Diagnosis},
-  author={Nihal},
-  year={2026},
-  url={https://github.com/iamnih4l/CouncilMed}
-}
-```
+*Research License* - See repository for details.

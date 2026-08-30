@@ -1,150 +1,393 @@
+/**
+ * CouncilMed — Reports Page
+ * ============================
+ * View and generate structured clinical reports from council analyses.
+ * Reports are generated from real evidence — no fabricated content.
+ */
+
+import { useState, useEffect } from 'react';
+import { motion, AnimatePresence } from 'framer-motion';
+import {
+  FileText, Download, Loader2, AlertCircle, ChevronDown,
+  ChevronRight, Shield, Brain, Clock, Copy, Check,
+  AlertTriangle, Info,
+} from 'lucide-react';
 import { GlassCard } from '../components/ui/GlassCard';
-import { motion } from 'framer-motion';
-import { FileText, Download, Share2, Search, Filter, ArrowUpRight, History } from 'lucide-react';
-import { StatusBadge } from '../components/ui/StatusBadge';
-import { toast } from 'sonner';
-import { usePersistentReports } from '../hooks/usePersistentReports';
+import { api } from '../services/api';
+import type { AnalysisHistoryItem, ReportResponse, ReportSectionResponse } from '../services/api';
 
-export default function Reports() {
-  const { reports, isLoading, deleteReport } = usePersistentReports();
+function ReportSection({ section, depth = 0 }: { section: ReportSectionResponse; depth?: number }) {
+  const [expanded, setExpanded] = useState(true);
 
-  const handleDownload = async (reportId: string) => {
-    // For a real app, we'd need to re-render the report or have it in a hidden div
-    // For now, we'll notify that we're generating from history
-    toast.info(`Generating archived report for ${reportId}...`);
-    // Note: Re-generating exact PDF from history requires the DOM element to exist.
-    // In a prod app, we'd store the PDF blob or its JSON state.
+  const severityStyles: Record<string, string> = {
+    critical: 'border-l-red-500/50 bg-red-500/5',
+    warning: 'border-l-amber-500/50 bg-amber-500/5',
+    '': '',
+  };
+
+  const style = severityStyles[section.severity] || '';
+
+  return (
+    <div className={`border-l-2 ${style || 'border-l-white/10'} pl-3 ${depth > 0 ? 'ml-3 mt-2' : 'mt-3'}`}>
+      <button
+        onClick={() => setExpanded(!expanded)}
+        className="flex items-center gap-1.5 w-full text-left group"
+      >
+        {expanded ? (
+          <ChevronDown className="w-3 h-3 text-zinc-600 flex-shrink-0" />
+        ) : (
+          <ChevronRight className="w-3 h-3 text-zinc-600 flex-shrink-0" />
+        )}
+        <span className={`text-xs font-semibold uppercase tracking-wider ${
+          depth === 0 ? 'text-zinc-300' : 'text-zinc-500'
+        } group-hover:text-white transition-colors`}>
+          {section.title}
+        </span>
+      </button>
+
+      <AnimatePresence>
+        {expanded && (
+          <motion.div
+            initial={{ height: 0, opacity: 0 }}
+            animate={{ height: 'auto', opacity: 1 }}
+            exit={{ height: 0, opacity: 0 }}
+            transition={{ duration: 0.2 }}
+            className="overflow-hidden"
+          >
+            <div className="space-y-1 mt-1.5 pl-4">
+              {section.content.map((line, i) => (
+                <p key={i} className="text-[12px] text-zinc-400 leading-relaxed font-mono">
+                  {line}
+                </p>
+              ))}
+            </div>
+
+            {section.subsections.map((sub, i) => (
+              <ReportSection key={i} section={sub} depth={depth + 1} />
+            ))}
+          </motion.div>
+        )}
+      </AnimatePresence>
+    </div>
+  );
+}
+
+function ReportViewer({ report }: { report: ReportResponse }) {
+  const [copied, setCopied] = useState(false);
+  const [showText, setShowText] = useState(false);
+
+  const handleCopy = async () => {
+    try {
+      await navigator.clipboard.writeText(report.report_text);
+      setCopied(true);
+      setTimeout(() => setCopied(false), 2000);
+    } catch {
+      // Fallback
+      const textArea = document.createElement('textarea');
+      textArea.value = report.report_text;
+      document.body.appendChild(textArea);
+      textArea.select();
+      document.execCommand('copy');
+      document.body.removeChild(textArea);
+      setCopied(true);
+      setTimeout(() => setCopied(false), 2000);
+    }
+  };
+
+  const handleDownload = () => {
+    const blob = new Blob([report.report_text], { type: 'text/plain' });
+    const url = URL.createObjectURL(blob);
+    const a = document.createElement('a');
+    a.href = url;
+    a.download = `councilmed_report_${report.report_id.slice(0, 8)}.txt`;
+    a.click();
+    URL.revokeObjectURL(url);
   };
 
   return (
-    <div className="max-w-6xl mx-auto space-y-6 pb-12">
-      <div className="flex items-center justify-between">
-        <div>
-          <h1 className="text-3xl font-bold text-white tracking-tight flex items-center gap-3">
-            <FileText className="w-8 h-8 text-[var(--color-accent-cyan)]" />
-            Diagnostic Reports
-          </h1>
-          <p className="text-zinc-400 mt-2">Centralized access to all AI-generated diagnostic records</p>
-        </div>
-        <div className="flex gap-3">
-          <div className="relative group">
-            <Search className="w-4 h-4 absolute left-3 top-1/2 -translate-y-1/2 text-zinc-500 group-focus-within:text-[var(--color-accent-cyan)] transition-colors" />
-            <input 
-              type="text" 
-              placeholder="Search reports..."
-              className="bg-white/5 border border-white/10 rounded-xl py-2 pl-10 pr-4 text-sm text-zinc-300 focus:outline-none focus:ring-2 focus:ring-[var(--color-accent-cyan)] transition-all w-64"
-            />
-          </div>
-          <button className="p-2 bg-white/5 border border-white/10 rounded-xl text-zinc-300 hover:text-white transition-all">
-            <Filter className="w-5 h-5" />
-          </button>
-        </div>
-      </div>
-
-      <div className="grid grid-cols-1 md:grid-cols-4 gap-6">
-        <GlassCard className="p-6 md:col-span-3">
-          <div className="flex items-center justify-between mb-6 border-b border-white/5 pb-4">
-             <h3 className="text-lg font-bold text-white flex items-center gap-2">
-               <History className="w-5 h-5 text-zinc-400" />
-               Recent Activity
-             </h3>
-             <span className="text-xs font-medium text-zinc-500 uppercase tracking-widest">Total {reports.length} Reports</span>
-          </div>
-          
-          <div className="overflow-x-auto">
-            {isLoading ? (
-              <div className="w-full h-32 flex items-center justify-center text-zinc-400">Loading vault...</div>
-            ) : (
-            <table className="w-full text-left">
-              <thead>
-                <tr className="border-b border-white/5 text-zinc-500 text-xs uppercase tracking-wider">
-                  <th className="px-4 py-3 font-semibold">Report ID</th>
-                  <th className="px-4 py-3 font-semibold">Diagnostic Target</th>
-                  <th className="px-4 py-3 font-semibold">Capture Date</th>
-                  <th className="px-4 py-3 font-semibold">AI Status</th>
-                  <th className="px-4 py-3 font-semibold text-right">Actions</th>
-                </tr>
-              </thead>
-              <tbody className="divide-y divide-white/5">
-                {reports.map((report, index) => (
-                  <motion.tr 
-                    key={report.id}
-                    initial={{ opacity: 0, x: -10 }}
-                    animate={{ opacity: 1, x: 0 }}
-                    transition={{ delay: index * 0.05 }}
-                    className="hover:bg-white/5 transition-colors group"
-                  >
-                    <td className="px-4 py-4 text-sm font-medium text-white">{report.id}</td>
-                    <td className="px-4 py-4 text-sm text-zinc-300 font-medium">{report.modality} Analysis</td>
-                    <td className="px-4 py-4 text-sm text-zinc-500">{report.date}</td>
-                    <td className="px-4 py-4 text-sm">
-                      <StatusBadge status={report.result.severity as 'critical' | 'warning' | 'clear' | 'info'}>
-                        {report.result.primaryDiagnosis}
-                      </StatusBadge>
-                    </td>
-                    <td className="px-4 py-4 text-right">
-                      <div className="flex items-center justify-end gap-2">
-                        <button 
-                          onClick={() => toast.info(`Viewing ${report.id}`)}
-                          className="p-1.5 bg-white/5 rounded-lg text-zinc-400 hover:text-white border border-white/10 transition-all opacity-0 group-hover:opacity-100"
-                        >
-                          <ArrowUpRight className="w-4 h-4" />
-                        </button>
-                        <button 
-                          onClick={() => deleteReport(report.id)}
-                          className="p-1.5 bg-red-500/10 rounded-lg text-red-500 hover:bg-red-500/20 border border-red-500/20 transition-all opacity-0 group-hover:opacity-100"
-                        >
-                          <Download className="w-4 h-4 rotate-180" />
-                        </button>
-                        <button 
-                          onClick={() => handleDownload(report.id)}
-                          className="p-1.5 bg-gradient-to-br from-[var(--color-accent-cyan)] to-[var(--color-accent-teal)] rounded-lg text-[#0d1324] font-bold border border-white/10 transition-all opacity-0 group-hover:opacity-100"
-                        >
-                          <Download className="w-4 h-4" />
-                        </button>
-                      </div>
-                    </td>
-                  </motion.tr>
-                ))}
-              </tbody>
-            </table>
-            )}
-          </div>
-        </GlassCard>
-
-        <div className="md:col-span-1 space-y-6">
-          <GlassCard className="p-6">
-            <h4 className="text-sm font-bold text-white uppercase tracking-widest mb-4">Storage Insights</h4>
-            <div className="space-y-4">
-              <div>
-                <div className="flex justify-between text-xs mb-1">
-                  <span className="text-zinc-500">DICOM Vault Usage</span>
-                  <span className="text-white">IndexedDB (Safe)</span>
-                </div>
-                <div className="h-1.5 w-full bg-white/5 rounded-full overflow-hidden">
-                  <div className="h-full bg-[var(--color-accent-emerald)] rounded-full w-[10%] transition-all"></div>
-                </div>
+    <motion.div
+      initial={{ opacity: 0, y: 20 }}
+      animate={{ opacity: 1, y: 0 }}
+      className="space-y-4"
+    >
+      {/* Report Header */}
+      <GlassCard>
+        <div className="flex items-start justify-between">
+          <div>
+            <div className="flex items-center gap-2">
+              <div className="p-2 rounded-xl bg-cyan-500/10 border border-cyan-500/20">
+                <FileText className="w-5 h-5 text-cyan-400" />
               </div>
-              <div className="pt-4 border-t border-white/10">
-                <p className="text-xs text-zinc-400 mb-3">Syncing with Central Medical Archive...</p>
-                <div className="flex -space-x-2">
-                   {[1,2,3,4].map(i => (
-                     <div key={i} className="w-8 h-8 rounded-full border-2 border-[#0d1324] bg-white/10 flex items-center justify-center text-[10px] text-zinc-500 font-bold uppercase overflow-hidden">
-                        <img src={`https://api.dicebear.com/7.x/avataaars/svg?seed=${i * 123}`} alt="User" />
-                     </div>
-                   ))}
-                   <div className="w-8 h-8 rounded-full border-2 border-[#0d1324] bg-white/10 flex items-center justify-center text-[10px] text-zinc-500 font-bold">+12</div>
-                </div>
+              <div>
+                <h2 className="text-lg font-bold text-white">Analysis Report</h2>
+                <p className="text-xs text-zinc-500">{report.study_type} • v{report.version}</p>
               </div>
             </div>
-          </GlassCard>
-          
-          <button className="w-full py-4 bg-white/5 border border-white/10 hover:bg-white/10 rounded-2xl flex flex-col items-center justify-center gap-2 transition-all group">
-            <Share2 className="w-6 h-6 text-zinc-400 group-hover:text-[var(--color-accent-cyan)] transition-colors" />
-            <span className="text-sm font-medium text-white">Share Selected</span>
-          </button>
+          </div>
+
+          <div className="flex items-center gap-2">
+            <span className={`text-[10px] px-2 py-0.5 rounded-full ${
+              report.report_status === 'final'
+                ? 'text-emerald-400 bg-emerald-500/10 border border-emerald-500/20'
+                : 'text-amber-400 bg-amber-500/10 border border-amber-500/20'
+            }`}>
+              {report.report_status.toUpperCase()}
+            </span>
+          </div>
+        </div>
+
+        <div className="flex items-center gap-4 mt-3 text-[11px] text-zinc-500">
+          <span className="flex items-center gap-1"><Clock className="w-3 h-3" />{new Date(report.generated_at).toLocaleString()}</span>
+          <span>{report.modality} / {report.anatomy}</span>
+          <span>ID: {report.report_id.slice(0, 8)}</span>
+        </div>
+      </GlassCard>
+
+      {/* Impression */}
+      <GlassCard className="border-cyan-500/10 bg-cyan-500/[0.03]">
+        <h3 className="text-xs font-semibold uppercase tracking-wider text-cyan-400 mb-2 flex items-center gap-1.5">
+          <Brain className="w-3.5 h-3.5" /> Impression
+        </h3>
+        <p className="text-sm text-zinc-300 leading-relaxed">{report.impression}</p>
+      </GlassCard>
+
+      {/* Report Sections */}
+      <GlassCard>
+        <h3 className="text-xs font-semibold uppercase tracking-wider text-zinc-400 mb-1">Detailed Findings</h3>
+        {report.sections.map((section, i) => (
+          <ReportSection key={i} section={section} />
+        ))}
+      </GlassCard>
+
+      {/* Recommendations */}
+      {report.recommendations.length > 0 && (
+        <GlassCard>
+          <h3 className="text-xs font-semibold uppercase tracking-wider text-amber-400 mb-2 flex items-center gap-1.5">
+            <AlertTriangle className="w-3.5 h-3.5" /> Recommendations
+          </h3>
+          <ul className="space-y-1.5">
+            {report.recommendations.map((rec, i) => (
+              <li key={i} className="text-[12px] text-zinc-400 flex items-start gap-2">
+                <span className="text-amber-400 mt-0.5">•</span>
+                <span>{rec}</span>
+              </li>
+            ))}
+          </ul>
+        </GlassCard>
+      )}
+
+      {/* Limitations */}
+      {report.limitations.length > 0 && (
+        <GlassCard className="border-zinc-700/50">
+          <h3 className="text-xs font-semibold uppercase tracking-wider text-zinc-500 mb-2 flex items-center gap-1.5">
+            <Info className="w-3.5 h-3.5" /> Limitations
+          </h3>
+          <ul className="space-y-1.5">
+            {report.limitations.map((lim, i) => (
+              <li key={i} className="text-[12px] text-zinc-500 flex items-start gap-2">
+                <span className="text-zinc-600 mt-0.5">•</span>
+                <span>{lim}</span>
+              </li>
+            ))}
+          </ul>
+        </GlassCard>
+      )}
+
+      {/* Actions */}
+      <div className="flex items-center gap-3">
+        <button
+          onClick={handleCopy}
+          className="flex items-center gap-1.5 px-4 py-2 rounded-lg text-xs font-medium
+            bg-white/5 text-zinc-400 hover:bg-white/10 hover:text-white transition-all"
+        >
+          {copied ? <Check className="w-3.5 h-3.5 text-emerald-400" /> : <Copy className="w-3.5 h-3.5" />}
+          {copied ? 'Copied!' : 'Copy Report'}
+        </button>
+        <button
+          onClick={handleDownload}
+          className="flex items-center gap-1.5 px-4 py-2 rounded-lg text-xs font-medium
+            bg-white/5 text-zinc-400 hover:bg-white/10 hover:text-white transition-all"
+        >
+          <Download className="w-3.5 h-3.5" /> Download .txt
+        </button>
+        <button
+          onClick={() => setShowText(!showText)}
+          className="flex items-center gap-1.5 px-4 py-2 rounded-lg text-xs font-medium
+            bg-white/5 text-zinc-400 hover:bg-white/10 hover:text-white transition-all"
+        >
+          <FileText className="w-3.5 h-3.5" /> {showText ? 'Hide' : 'Show'} Plain Text
+        </button>
+      </div>
+
+      {/* Plain Text View */}
+      <AnimatePresence>
+        {showText && (
+          <motion.div
+            initial={{ height: 0, opacity: 0 }}
+            animate={{ height: 'auto', opacity: 1 }}
+            exit={{ height: 0, opacity: 0 }}
+          >
+            <GlassCard className="p-0">
+              <pre className="text-[11px] text-zinc-400 font-mono p-4 overflow-x-auto whitespace-pre-wrap leading-relaxed max-h-[500px] overflow-y-auto">
+                {report.report_text}
+              </pre>
+            </GlassCard>
+          </motion.div>
+        )}
+      </AnimatePresence>
+
+      {/* Disclaimer */}
+      <div className="px-4 py-3 rounded-xl bg-white/[0.02] border border-white/5">
+        <div className="flex items-start gap-2">
+          <Shield className="w-4 h-4 text-zinc-600 flex-shrink-0 mt-0.5" />
+          <p className="text-[11px] text-zinc-600 leading-relaxed">
+            This report is AI-generated and intended to assist clinical decision-making.
+            It does NOT constitute a diagnosis and MUST be reviewed by a qualified clinician
+            before any clinical action is taken.
+          </p>
         </div>
       </div>
-    </div>
+    </motion.div>
+  );
+}
+
+export default function ReportsPage() {
+  const [analyses, setAnalyses] = useState<AnalysisHistoryItem[]>([]);
+  const [selectedAnalysis, setSelectedAnalysis] = useState<string | null>(null);
+  const [report, setReport] = useState<ReportResponse | null>(null);
+  const [loading, setLoading] = useState(false);
+  const [generating, setGenerating] = useState(false);
+  const [error, setError] = useState<string | null>(null);
+
+  useEffect(() => {
+    async function fetchAnalyses() {
+      setLoading(true);
+      try {
+        const data = await api.getAnalyses(50, 0);
+        setAnalyses(data.filter(a => a.status === 'completed'));
+      } catch (err) {
+        setError(err instanceof Error ? err.message : 'Failed to load analyses');
+      } finally {
+        setLoading(false);
+      }
+    }
+    fetchAnalyses();
+  }, []);
+
+  const handleGenerateReport = async (analysisId: string) => {
+    setGenerating(true);
+    setError(null);
+    setReport(null);
+    setSelectedAnalysis(analysisId);
+
+    try {
+      const reportData = await api.generateReport({ analysis_id: analysisId });
+      setReport(reportData);
+    } catch (err) {
+      setError(err instanceof Error ? err.message : 'Report generation failed');
+    } finally {
+      setGenerating(false);
+    }
+  };
+
+  return (
+    <motion.div
+      className="max-w-5xl mx-auto space-y-6"
+      initial={{ opacity: 0 }}
+      animate={{ opacity: 1 }}
+    >
+      <div>
+        <h1 className="text-2xl font-bold tracking-tight bg-clip-text text-transparent bg-gradient-to-r from-white to-zinc-400">
+          Clinical Reports
+        </h1>
+        <p className="text-zinc-500 text-sm mt-0.5">Generate structured reports from council evidence</p>
+      </div>
+
+      {error && (
+        <GlassCard className="border-red-500/20 bg-red-500/5">
+          <div className="flex items-start gap-3">
+            <AlertCircle className="w-5 h-5 text-red-400 flex-shrink-0" />
+            <div>
+              <p className="text-sm text-red-400 font-medium">Error</p>
+              <p className="text-xs text-zinc-400 mt-1">{error}</p>
+            </div>
+          </div>
+        </GlassCard>
+      )}
+
+      {/* Analysis Selector */}
+      {!report && (
+        <GlassCard>
+          <h2 className="text-sm font-semibold text-white mb-3">Select Analysis</h2>
+          <p className="text-xs text-zinc-500 mb-4">Choose a completed analysis to generate a report from.</p>
+
+          {loading ? (
+            <div className="flex items-center gap-2 py-8 justify-center">
+              <Loader2 className="w-4 h-4 text-cyan-400 animate-spin" />
+              <span className="text-sm text-zinc-500">Loading analyses...</span>
+            </div>
+          ) : analyses.length === 0 ? (
+            <div className="text-center py-12">
+              <FileText className="w-10 h-10 text-zinc-700 mx-auto mb-3" />
+              <p className="text-sm text-zinc-500">No completed analyses</p>
+              <p className="text-xs text-zinc-600 mt-1">Run an analysis from the Workstation first</p>
+            </div>
+          ) : (
+            <div className="space-y-2">
+              {analyses.map((item) => {
+                const date = item.created_at ? new Date(item.created_at) : null;
+                const isSelected = selectedAnalysis === item.id;
+
+                return (
+                  <button
+                    key={item.id}
+                    onClick={() => handleGenerateReport(item.id)}
+                    disabled={generating}
+                    className={`w-full flex items-center justify-between px-4 py-3 rounded-xl transition-all
+                      ${isSelected && generating
+                        ? 'bg-cyan-500/10 border border-cyan-500/30'
+                        : 'bg-white/[0.02] border border-white/5 hover:bg-white/[0.05] hover:border-white/10'
+                      }`}
+                  >
+                    <div className="flex items-center gap-3">
+                      <Brain className="w-4 h-4 text-cyan-400" />
+                      <div className="text-left">
+                        <p className="text-sm font-medium text-white">
+                          {item.modality || 'Unknown'} / {item.anatomy || 'Unknown'}
+                        </p>
+                        <p className="text-[10px] text-zinc-600">
+                          {item.request_id?.slice(0, 12)}...
+                          {date && ` • ${date.toLocaleString()}`}
+                        </p>
+                      </div>
+                    </div>
+                    <div className="flex items-center gap-2">
+                      {isSelected && generating ? (
+                        <Loader2 className="w-4 h-4 text-cyan-400 animate-spin" />
+                      ) : (
+                        <span className="text-[11px] text-cyan-400">Generate Report →</span>
+                      )}
+                    </div>
+                  </button>
+                );
+              })}
+            </div>
+          )}
+        </GlassCard>
+      )}
+
+      {/* Report Display */}
+      {report && (
+        <>
+          <button
+            onClick={() => { setReport(null); setSelectedAnalysis(null); }}
+            className="text-xs text-zinc-500 hover:text-white transition-colors"
+          >
+            ← Back to Analysis List
+          </button>
+          <ReportViewer report={report} />
+        </>
+      )}
+    </motion.div>
   );
 }

@@ -1,0 +1,80 @@
+# =====================================================
+# CouncilMed — Model Manifest: Brain MRI Segmenter v1
+# =====================================================
+# Council Member C: Lightweight segmentation model
+# Trained on pseudo-labels from classifier Grad-CAM
+# =====================================================
+
+name: "BrainMRI-Segmenter-v1"
+model_id: "brain_mri_segmenter_v1"
+version: "1.0.0"
+description: >
+  Lightweight encoder-decoder (U-Net lite) with dual output heads:
+  (1) Region classification (10 brain regions, softmax)
+  (2) Segmentation mask (7x7x1, sigmoid)
+  Trained on pseudo segmentation labels derived from classifier Grad-CAM.
+  NOTE: This is NOT a full volumetric segmentation model. It produces
+  a coarse 7x7 attention-like mask suitable for localization, not
+  voxel-precise segmentation.
+
+# Architecture
+architecture: "Conv Encoder (32→64→128→256→256) + Region Head + Seg Mask Head"
+architecture_family: "UNet-Lite"
+framework: "pytorch"
+
+# Task
+tasks:
+  - segmentation
+  - localization
+modality: "MRI"
+anatomy: "brain"
+
+# Classes (region outputs)
+num_classes: 10
+class_names:
+  - "Frontal Left"
+  - "Frontal Right"
+  - "Temporal Left"
+  - "Temporal Right"
+  - "Parietal Left"
+  - "Parietal Right"
+  - "Occipital Left"
+  - "Occipital Right"
+  - "Brainstem"
+  - "Thalamus"
+
+# Input specification
+input_shape: [224, 224, 3]
+input_format: "HWC"
+input_normalization: "0-1"
+
+# Weights
+weights_path: "model_registry/weights/brain_mri_segmenter_v1.pth"
+weights_checksum: "629e56d0e183027eff1eef30e11114f201736d1da2f8b83e0cc01b4fb8e6f649"
+weights_size_mb: 4.0
+pretrained_on: "Pseudo Grad-CAM labels (no ImageNet pretraining)"
+
+# Validation Metrics
+metrics:
+  dataset: "Pseudo-labeled from classifier Grad-CAM"
+  dataset_size: 800
+  split_method: "85/15 train/val split"
+  validated: true
+  notes: >
+    Trained via training/train_attention_segmenter.py.
+    Segmentation labels are coarse (7x7 resolution) pseudo-labels
+    from the classifier's mean feature activations.
+    This model is a starting point; production segmentation should
+    use a properly trained U-Net or Swin-UNETR on BraTS data.
+
+# Hardware
+min_ram_gb: 1.0
+min_vram_gb: 0.0
+supports_cpu: true
+supports_cuda: true
+supports_mps: true
+
+# Provenance
+license: "MIT"
+source: "locally trained"
+training_dataset: "Derived from Kaggle Brain Tumor MRI Dataset via Grad-CAM"

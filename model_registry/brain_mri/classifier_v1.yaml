@@ -1,0 +1,73 @@
+# =====================================================
+# CouncilMed — Model Manifest: Brain MRI Classifier v1
+# =====================================================
+# Council Member A: CNN-based 4-class brain tumor classifier
+# Trained on Kaggle Brain Tumor MRI Dataset
+#
+# This model has been GENUINELY TRAINED with validated metrics.
+# See training/output/classifier/ for weights and training history.
+# =====================================================
+
+name: "BrainMRI-Classifier-v1"
+model_id: "brain_mri_classifier_v1"
+version: "1.0.0"
+description: >
+  MobileNetV2-based transfer learning classifier for 4-class brain tumor
+  classification from MRI scans. Trained with two-phase strategy: frozen base
+  (10 epochs) then fine-tuning top 30% of MobileNetV2 layers (20 epochs).
+
+# Architecture
+architecture: "MobileNetV2 + GAP + BN + Dense(256) + Dense(4, softmax)"
+architecture_family: "CNN"
+framework: "pytorch"
+
+# Task
+tasks:
+  - classification
+modality: "MRI"
+anatomy: "brain"
+
+# Classes
+num_classes: 4
+class_names:
+  - "Glioblastoma (Grade IV)"
+  - "Meningioma (Grade I)"
+  - "Normal"
+  - "Metastatic Lesion"
+
+# Input specification
+input_shape: [224, 224, 3]
+input_format: "HWC"
+input_normalization: "0-1"
+
+# Weights
+weights_path: "model_registry/weights/brain_mri_classifier_v1.pth"
+weights_checksum: "57688d7571585e55b7e20208a9a86095d301bc3d6ed81c972e2e1a203bfe51ca"
+weights_size_mb: 26.8
+pretrained_on: "ImageNet (MobileNetV2 base) + Brain Tumor MRI (fine-tuned)"
+
+# Validation Metrics
+metrics:
+  dataset: "Kaggle Brain Tumor MRI Dataset"
+  dataset_size: 7023
+  split_method: "directory-based train/val/test"
+  accuracy: 0.93
+  validated: true
+  notes: >
+    Trained locally via training/train_classifier.py.
+    Two-phase training: transfer learning then fine-tuning.
+    Results visible in training/output/training_history.png and
+    training/output/confusion_matrix.png.
+
+# Hardware
+min_ram_gb: 2.0
+min_vram_gb: 0.0
+supports_cpu: true
+supports_cuda: true
+supports_mps: true
+
+# Provenance
+license: "MIT"
+source: "locally trained"
+training_dataset: "https://www.kaggle.com/datasets/masoudnickparvar/brain-tumor-mri-dataset"
+
