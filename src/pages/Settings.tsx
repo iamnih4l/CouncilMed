@@ -8,7 +8,7 @@
 import { useState, useEffect } from 'react';
 import { motion } from 'framer-motion';
 import {
-  Settings, Server, Brain, Database, Cpu,
+  Server, Brain, Database,
   Shield,  CheckCircle,
   XCircle, Loader2, Globe,
 } from 'lucide-react';

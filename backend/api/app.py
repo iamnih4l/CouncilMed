@@ -72,10 +72,10 @@ async def lifespan(app: FastAPI):
     await init_database()
     
     # Initialize pipeline
-    from ..pipeline import AnalysisPipeline
+    from ..paths import get_base_dir
     
-    registry_dir = Path(__file__).parent.parent.parent / "model_registry"
-    output_dir = Path(__file__).parent.parent.parent / "output"
+    registry_dir = get_base_dir() / "model_registry"
+    output_dir = get_base_dir() / "output"
     
     _pipeline = AnalysisPipeline(
         registry_dir=registry_dir,
@@ -213,7 +213,8 @@ async def analyze_uploaded_image(
         )
     
     # Save to temp file
-    upload_dir = Path(__file__).parent.parent.parent / "data" / "uploads"
+    from ..paths import get_base_dir
+    upload_dir = get_base_dir() / "data" / "uploads"
     upload_dir.mkdir(parents=True, exist_ok=True)
     
     temp_path = upload_dir / f"{uuid.uuid4()}{suffix}"
@@ -693,8 +694,9 @@ async def ingest_knowledge():
     """Ingest knowledge files from data/knowledge/ directory."""
     try:
         from ..knowledge.rag import KnowledgeStore
+        from ..paths import get_base_dir
         
-        knowledge_dir = Path(__file__).parent.parent.parent / "data" / "knowledge"
+        knowledge_dir = get_base_dir() / "data" / "knowledge"
         if not knowledge_dir.exists():
             raise HTTPException(404, "Knowledge directory not found")
         

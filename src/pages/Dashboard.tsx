@@ -12,7 +12,7 @@ import { useNavigate } from 'react-router-dom';
 import { GlassCard } from '../components/ui/GlassCard';
 import {
   Activity, Brain, Cpu, Shield, Scan, Database,
-  CheckCircle, AlertTriangle, XCircle, Clock,
+  CheckCircle, XCircle,
   ChevronRight, Loader2, WifiOff,
 } from 'lucide-react';
 import { motion } from 'framer-motion';

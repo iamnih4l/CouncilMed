@@ -11,11 +11,12 @@
 import { useState, useCallback, useRef } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import {
-  Upload, FileImage, Loader2, AlertCircle, ChevronRight,
+  Upload, FileImage, AlertCircle, ChevronRight,
   RotateCcw, Info,
   Bot, Sparkles, Brain
 } from 'lucide-react';
-import { GlassCard } from '../components/ui/GlassCard';
+import { HudPanel } from '../components/ui/HudPanel';
+import { WorkspaceEnvironment } from '../components/3d/WorkspaceEnvironment';
 import { CouncilEvidencePanel } from '../components/council/CouncilEvidencePanel';
 import { MedicalImageViewer } from '../components/viewer/MedicalImageViewer';
 import { useCouncilAnalysis } from '../hooks/useCouncilAnalysis';
@@ -98,13 +99,18 @@ export default function WorkstationAnalysis() {
     }
   }, [analysis.result]);
 
+  const coreState = analysis.status === 'analyzing' ? 'processing' : 
+                      analysis.status === 'complete' ? 'complete' : 'idle';
+
   return (
-    <div className="h-full flex flex-col">
-      {/* Top bar */}
-      <div className="flex items-center justify-between mb-4">
+    <div className="h-full flex flex-col relative">
+      <WorkspaceEnvironment coreState={coreState} />
+
+      {/* Top bar (Spatial overlay) */}
+      <div className="relative z-10 flex items-center justify-between mb-4 pointer-events-none">
         <div>
-          <h1 className="text-2xl font-bold tracking-tight bg-clip-text text-transparent bg-gradient-to-r from-white to-zinc-400">
-            Analysis Workstation
+          <h1 className="text-2xl font-light tracking-[0.2em] text-white text-glow">
+            ANALYSIS WORKSTATION
           </h1>
           <p className="text-zinc-500 text-sm mt-0.5">
             {fileName
@@ -127,15 +133,15 @@ export default function WorkstationAnalysis() {
       </div>
 
       {/* Main workspace: Image | Evidence */}
-      <div className="flex-1 grid grid-cols-1 lg:grid-cols-5 gap-4 min-h-0">
+      <div className="relative z-10 flex-1 grid grid-cols-1 lg:grid-cols-5 gap-6 min-h-0">
 
         {/* Left: Image Viewer (3/5 width) */}
         <div className="lg:col-span-3 flex flex-col min-h-0">
           {!analysis.result && !analysis.isProcessing ? (
             /* Upload Drop Zone */
-            <GlassCard
+            <HudPanel
               className="flex-1 flex flex-col items-center justify-center cursor-pointer min-h-[400px]
-                border-dashed border-2 border-white/10 hover:border-cyan-500/40 transition-all duration-300"
+                border-dashed border-2 hover:border-cyan-500/80 transition-all duration-500 group"
               onDrop={handleDrop}
               onDragOver={handleDragOver}
               onClick={() => fileInputRef.current?.click()}
@@ -173,13 +179,13 @@ export default function WorkstationAnalysis() {
               <motion.div
                 initial={{ scale: 0.9, opacity: 0 }}
                 animate={{ scale: 1, opacity: 1 }}
-                className="flex flex-col items-center"
+                className="flex flex-col items-center pointer-events-none"
               >
-                <div className="w-20 h-20 rounded-2xl bg-gradient-to-br from-cyan-500/20 to-teal-500/20 
-                  flex items-center justify-center mb-6 border border-cyan-500/20">
-                  <Upload className="w-8 h-8 text-cyan-400" />
+                <div className="w-24 h-24 rounded-full bg-cyan-500/10 
+                  flex items-center justify-center mb-6 border border-cyan-500/30 group-hover:scale-110 transition-transform duration-700 shadow-[0_0_30px_rgba(0,240,255,0.2)]">
+                  <Upload className="w-10 h-10 text-cyan-400" />
                 </div>
-                <p className="text-lg font-semibold text-white mb-2">Drop Medical Image</p>
+                <p className="text-xl font-light tracking-widest text-white mb-2 uppercase text-glow">Drop Data Target</p>
                 <p className="text-sm text-zinc-500 text-center max-w-sm">
                   DICOM (.dcm), NIfTI (.nii), JPEG, PNG supported.<br />
                   The AI Council will analyze the image with {' '}
@@ -191,26 +197,44 @@ export default function WorkstationAnalysis() {
                   <span className="flex items-center gap-1"><FileImage className="w-3 h-3" /> JPEG/PNG</span>
                 </div>
               </motion.div>
-            </GlassCard>
+            </HudPanel>
           ) : (
             /* Medical Image Viewer */
             <div className="flex-1 flex flex-col min-h-[400px] relative">
               {/* Processing overlay */}
               {analysis.isProcessing && (
-                <div className="absolute inset-0 flex flex-col items-center justify-center z-30 bg-black/60 backdrop-blur-sm rounded-2xl">
-                  <Loader2 className="w-10 h-10 text-cyan-400 animate-spin mb-4" />
-                  <p className="text-sm text-white font-medium mb-1">Council Analysis in Progress</p>
-                  <p className="text-xs text-zinc-500">
-                    {analysis.status === 'uploading' ? 'Uploading image...' : 'Running model inference...'}
-                  </p>
-                  <div className="w-48 h-1.5 rounded-full bg-white/10 mt-4 overflow-hidden">
+                <div className="absolute inset-0 flex flex-col items-center justify-center z-30 bg-black/80 backdrop-blur-md rounded-xl cinematic-border">
+                  <div className="w-16 h-16 border-t-2 border-cyan-500 rounded-full animate-spin mb-6" />
+                  
+                  <div className="h-8 overflow-hidden mb-2">
+                    <AnimatePresence mode="wait">
+                      <motion.p
+                        key={analysis.status === 'uploading' ? 'INGESTING DATA' : 
+                             analysis.progress < 30 ? 'NORMALIZING' : 
+                             analysis.progress < 60 ? 'ANALYZING ENTITIES' : 
+                             analysis.progress < 90 ? 'BUILDING RELATIONSHIPS' : 'GENERATING INSIGHTS'}
+                        initial={{ y: 20, opacity: 0 }}
+                        animate={{ y: 0, opacity: 1 }}
+                        exit={{ y: -20, opacity: 0 }}
+                        className="text-sm font-mono tracking-widest text-cyan-400 uppercase text-glow"
+                      >
+                        {analysis.status === 'uploading' ? 'INGESTING DATA' : 
+                         analysis.progress < 30 ? 'NORMALIZING' : 
+                         analysis.progress < 60 ? 'ANALYZING ENTITIES' : 
+                         analysis.progress < 90 ? 'BUILDING RELATIONSHIPS' : 'GENERATING INSIGHTS'}
+                      </motion.p>
+                    </AnimatePresence>
+                  </div>
+                  
+                  <div className="w-64 h-1 rounded-full bg-cyan-900/30 overflow-hidden relative">
+                    <div className="absolute inset-0 bg-[url('/scanline.png')] opacity-50" />
                     <motion.div
-                      className="h-full rounded-full bg-gradient-to-r from-cyan-500 to-teal-500"
+                      className="h-full bg-cyan-400 shadow-[0_0_10px_rgba(0,240,255,0.8)]"
                       style={{ width: `${analysis.progress}%` }}
                       transition={{ duration: 0.3 }}
                     />
                   </div>
-                  <p className="text-[11px] text-zinc-600 mt-2">{analysis.progress.toFixed(0)}%</p>
+                  <p className="text-[10px] font-mono tracking-widest text-cyan-500/60 mt-4">SYS.PROGRESS: {analysis.progress.toFixed(0)}%</p>
                 </div>
               )}
 
@@ -232,7 +256,7 @@ export default function WorkstationAnalysis() {
                 />
               </div>
 
-              <GlassCard className="flex-1 flex flex-col p-0 overflow-hidden">
+              <HudPanel className="flex-1 flex flex-col p-0 overflow-hidden">
                 <MedicalImageViewer
                   imageUrl={imagePreview}
                   fileName={fileName}
@@ -247,44 +271,44 @@ export default function WorkstationAnalysis() {
                   } : undefined}
                   className="flex-1"
                 />
-              </GlassCard>
+              </HudPanel>
             </div>
           )}
         </div>
 
         {/* Right: Council Evidence Panel (2/5 width) */}
-        <div className="lg:col-span-2 flex flex-col min-h-0 overflow-y-auto">
+        <div className="lg:col-span-2 flex flex-col min-h-0 overflow-y-auto z-20">
           {analysis.isError && (
-            <GlassCard className="border-red-500/20 bg-red-500/5">
+            <HudPanel className="border-red-500/50 bg-red-500/10 mb-4">
               <div className="flex items-start gap-3">
                 <AlertCircle className="w-5 h-5 text-red-400 flex-shrink-0 mt-0.5" />
                 <div>
-                  <p className="text-sm font-semibold text-red-400">Analysis Failed</p>
-                  <p className="text-xs text-zinc-400 mt-1">{analysis.error}</p>
+                  <p className="text-sm font-mono tracking-widest text-red-400 text-glow-red uppercase">Analysis Failed</p>
+                  <p className="text-xs text-red-300 mt-2 font-mono">{analysis.error}</p>
                   <button
                     onClick={analysis.reset}
-                    className="mt-3 flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-medium
-                      bg-white/5 text-zinc-400 hover:bg-white/10 hover:text-white transition-all"
+                    className="mt-4 flex items-center gap-2 px-4 py-2 border border-red-500/30 rounded-lg text-xs font-mono tracking-widest
+                      bg-black/40 text-red-400 hover:bg-red-500/20 hover:text-white transition-all"
                   >
-                    <RotateCcw className="w-3.5 h-3.5" /> Try Again
+                    <RotateCcw className="w-3.5 h-3.5" /> RE-INITIALIZE
                   </button>
                 </div>
               </div>
-            </GlassCard>
+            </HudPanel>
           )}
 
           {analysis.isComplete && analysis.result && (
             <>
               {/* Warnings */}
               {analysis.result.warnings.length > 0 && (
-                <GlassCard className="border-amber-500/10 mb-4">
+                <HudPanel className="border-amber-500/30 mb-4 bg-amber-500/5">
                   {analysis.result.warnings.map((w, i) => (
-                    <p key={i} className="text-xs text-amber-400 flex items-start gap-1.5">
-                      <Info className="w-3 h-3 mt-0.5 flex-shrink-0" />
+                    <p key={i} className="text-xs font-mono text-amber-400 flex items-start gap-2 mb-1">
+                      <Info className="w-3.5 h-3.5 mt-0.5 flex-shrink-0" />
                       {w}
                     </p>
                   ))}
-                </GlassCard>
+                </HudPanel>
               )}
 
               <CouncilEvidencePanel
@@ -316,14 +340,15 @@ export default function WorkstationAnalysis() {
                         initial={{ height: 0, opacity: 0 }}
                         animate={{ height: 'auto', opacity: 1 }}
                         exit={{ height: 0, opacity: 0 }}
+                        className="overflow-hidden"
                       >
-                        <GlassCard className="border-purple-500/20">
-                          <div className="space-y-3">
+                        <HudPanel className="border-purple-500/30 mt-2">
+                          <div className="space-y-4">
                             {analysis.result.agent_insight.key_insights.length > 0 && (
                               <div>
-                                <p className="text-[11px] text-purple-400 uppercase tracking-wider mb-1.5">Key Insights</p>
+                                <p className="text-[10px] font-mono text-purple-400 uppercase tracking-widest mb-2 border-b border-purple-500/20 pb-1">Key Insights</p>
                                 {analysis.result.agent_insight.key_insights.map((insight, i) => (
-                                  <p key={i} className="text-xs text-zinc-300 mb-1 flex items-start gap-1.5">
+                                  <p key={i} className="text-xs font-mono text-zinc-300 mb-2 flex items-start gap-2">
                                     <Sparkles className="w-3 h-3 text-purple-400 mt-0.5 flex-shrink-0" />
                                     {insight}
                                   </p>
@@ -332,10 +357,10 @@ export default function WorkstationAnalysis() {
                             )}
 
                             {analysis.result.agent_insight.safety_flags.length > 0 && (
-                              <div className="pt-2 border-t border-white/5">
-                                <p className="text-[11px] text-red-400 uppercase tracking-wider mb-1.5">Safety Flags</p>
+                              <div>
+                                <p className="text-[10px] font-mono text-red-400 uppercase tracking-widest mb-2 border-b border-red-500/20 pb-1">Safety Flags</p>
                                 {analysis.result.agent_insight.safety_flags.map((flag, i) => (
-                                  <p key={i} className="text-xs text-red-300 mb-1 flex items-start gap-1.5">
+                                  <p key={i} className="text-xs font-mono text-red-300 mb-2 flex items-start gap-2">
                                     <AlertCircle className="w-3 h-3 text-red-400 mt-0.5 flex-shrink-0" />
                                     {flag}
                                   </p>
@@ -344,10 +369,10 @@ export default function WorkstationAnalysis() {
                             )}
 
                             {analysis.result.agent_insight.recommended_actions.length > 0 && (
-                              <div className="pt-2 border-t border-white/5">
-                                <p className="text-[11px] text-cyan-400 uppercase tracking-wider mb-1.5">Recommended Actions</p>
+                              <div>
+                                <p className="text-[10px] font-mono text-cyan-400 uppercase tracking-widest mb-2 border-b border-cyan-500/20 pb-1">Recommended Actions</p>
                                 {analysis.result.agent_insight.recommended_actions.map((action, i) => (
-                                  <p key={i} className="text-xs text-zinc-300 mb-1 flex items-start gap-1.5">
+                                  <p key={i} className="text-xs font-mono text-zinc-300 mb-2 flex items-start gap-2">
                                     <ChevronRight className="w-3 h-3 text-cyan-400 mt-0.5 flex-shrink-0" />
                                     {action}
                                   </p>
@@ -355,12 +380,12 @@ export default function WorkstationAnalysis() {
                               </div>
                             )}
 
-                            <div className="pt-2 border-t border-white/5 flex items-center justify-between text-[11px] text-zinc-600">
-                              <span>{analysis.result.agent_insight.agent_model}</span>
-                              <span>{analysis.result.agent_insight.processing_time_ms.toFixed(0)}ms</span>
+                            <div className="pt-3 flex items-center justify-between text-[10px] font-mono text-cyan-500/50 uppercase tracking-widest">
+                              <span>MODEL: {analysis.result.agent_insight.agent_model}</span>
+                              <span>LATENCY: {analysis.result.agent_insight.processing_time_ms.toFixed(0)}ms</span>
                             </div>
                           </div>
-                        </GlassCard>
+                        </HudPanel>
                       </motion.div>
                     )}
                   </AnimatePresence>
@@ -371,14 +396,13 @@ export default function WorkstationAnalysis() {
 
           {/* Idle state: instructions */}
           {analysis.status === 'idle' && (
-            <GlassCard className="flex-1 flex flex-col items-center justify-center text-center">
-              <Brain className="w-10 h-10 text-zinc-700 mb-4" />
-              <p className="text-sm text-zinc-500 font-medium mb-2">Council Evidence Panel</p>
-              <p className="text-xs text-zinc-600 max-w-xs">
-                Upload a medical image to see real-time evidence from multiple AI models,
-                their agreement analysis, and council consensus.
+            <HudPanel className="flex-1 flex flex-col items-center justify-center text-center opacity-70">
+              <Brain className="w-12 h-12 text-cyan-500/40 mb-6 drop-shadow-[0_0_15px_rgba(0,240,255,0.3)]" />
+              <p className="text-sm font-mono tracking-widest text-white mb-3 text-glow uppercase">Council Evidence Stream</p>
+              <p className="text-xs font-mono text-zinc-400 max-w-xs leading-relaxed">
+                System awaiting data ingest. Provide medical imagery to initialize the multi-model intelligence consensus protocol.
               </p>
-            </GlassCard>
+            </HudPanel>
           )}
         </div>
       </div>

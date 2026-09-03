@@ -13,7 +13,7 @@
  */
 
 import { useState } from 'react';
-import { GlassCard } from '../ui/GlassCard';
+import { HudPanel } from '../ui/HudPanel';
 import { motion, AnimatePresence } from 'framer-motion';
 import {
   Shield, ShieldAlert, ShieldCheck, ShieldX,
@@ -286,7 +286,7 @@ export function CouncilEvidencePanel({ result, onReview }: CouncilEvidencePanelP
   return (
     <div className="space-y-4">
       {/* Header: Primary Finding */}
-      <GlassCard focused className="relative overflow-hidden">
+      <HudPanel className="relative overflow-hidden border-cyan-500/20">
         <div className="absolute top-0 right-0 w-48 h-48 rounded-full blur-3xl -mr-20 -mt-20 opacity-20"
           style={{
             backgroundColor: result.severity === 'critical' ? '#ef4444' :
@@ -333,11 +333,11 @@ export function CouncilEvidencePanel({ result, onReview }: CouncilEvidencePanelP
             </div>
           </div>
         </div>
-      </GlassCard>
+      </HudPanel>
 
       {/* Human Review Alert */}
       {result.requires_human_review && (
-        <GlassCard className="border-amber-500/20 bg-amber-500/5">
+        <HudPanel className="border-amber-500/30 bg-amber-500/5">
           <div className="flex items-start gap-3">
             <AlertTriangle className="w-5 h-5 text-amber-400 flex-shrink-0 mt-0.5" />
             <div className="flex-1">
@@ -381,15 +381,15 @@ export function CouncilEvidencePanel({ result, onReview }: CouncilEvidencePanelP
               )}
             </div>
           </div>
-        </GlassCard>
+        </HudPanel>
       )}
 
       {/* Disagreements */}
       {result.disagreements.length > 0 && (
-        <GlassCard className="border-amber-500/10">
+        <HudPanel className="border-amber-500/20 bg-amber-500/5">
           <div className="flex items-center gap-2 mb-3">
             <AlertTriangle className="w-4 h-4 text-amber-400" />
-            <p className="text-sm font-semibold text-amber-400">Model Disagreements</p>
+            <p className="text-sm font-mono tracking-widest text-amber-400 uppercase">Model Disagreements</p>
           </div>
           <div className="space-y-2">
             {result.disagreements.map((d, i) => (
@@ -405,7 +405,7 @@ export function CouncilEvidencePanel({ result, onReview }: CouncilEvidencePanelP
               </div>
             ))}
           </div>
-        </GlassCard>
+        </HudPanel>
       )}
 
       {/* Individual Model Evidence */}

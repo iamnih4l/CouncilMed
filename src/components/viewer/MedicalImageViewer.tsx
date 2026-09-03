@@ -38,6 +38,8 @@ interface MedicalImageViewerProps {
   fileName?: string;
   imageShape?: number[];
   metadata?: Record<string, string>;
+  modality?: string;
+  anatomy?: string;
   className?: string;
 }
 
@@ -47,6 +49,8 @@ export function MedicalImageViewer({
   fileName = '',
   imageShape,
   metadata,
+  modality = 'Unknown',
+  anatomy = 'Unknown',
   className = '',
 }: MedicalImageViewerProps) {
   const canvasRef = useRef<HTMLCanvasElement>(null);
@@ -153,6 +157,30 @@ export function MedicalImageViewer({
       if (state.invert) {
         context.fillText('INVERTED', w/dpr - 10, 35);
       }
+      
+      // Draw crosshairs at center
+      context.beginPath();
+      context.strokeStyle = 'rgba(0, 240, 255, 0.3)';
+      context.lineWidth = 1;
+      context.moveTo(w/(2*dpr), 0);
+      context.lineTo(w/(2*dpr), h/dpr);
+      context.moveTo(0, h/(2*dpr));
+      context.lineTo(w/dpr, h/(2*dpr));
+      context.stroke();
+      
+      // Draw targeting corners
+      const cornerSize = 20;
+      context.strokeStyle = 'rgba(0, 240, 255, 0.8)';
+      context.lineWidth = 2;
+      
+      // Top Left
+      context.beginPath(); context.moveTo(10, 10 + cornerSize); context.lineTo(10, 10); context.lineTo(10 + cornerSize, 10); context.stroke();
+      // Top Right
+      context.beginPath(); context.moveTo(w/dpr - 10 - cornerSize, 10); context.lineTo(w/dpr - 10, 10); context.lineTo(w/dpr - 10, 10 + cornerSize); context.stroke();
+      // Bottom Left
+      context.beginPath(); context.moveTo(10, h/dpr - 10 - cornerSize); context.lineTo(10, h/dpr - 10); context.lineTo(10 + cornerSize, h/dpr - 10); context.stroke();
+      // Bottom Right
+      context.beginPath(); context.moveTo(w/dpr - 10 - cornerSize, h/dpr - 10); context.lineTo(w/dpr - 10, h/dpr - 10); context.lineTo(w/dpr - 10, h/dpr - 10 - cornerSize); context.stroke();
     };
 
     ctx.save();
@@ -393,13 +421,17 @@ export function MedicalImageViewer({
           />
 
           {!imageUrl && (
-            <div className="absolute inset-0 flex items-center justify-center">
-              <div className="text-center text-zinc-700">
+            <div className="absolute inset-0 flex items-center justify-center pointer-events-none">
+              <div className="text-center text-cyan-500/30">
                 <Grid3x3 className="w-12 h-12 mx-auto mb-2 opacity-50" />
-                <p className="text-sm">No image loaded</p>
+                <p className="text-sm font-mono tracking-widest uppercase">No data source</p>
               </div>
             </div>
           )}
+
+          {/* Cinematic Scanline Overlay */}
+          <div className="absolute inset-0 pointer-events-none bg-[url('/scanline.png')] opacity-20 mix-blend-overlay" />
+          <div className="absolute inset-0 pointer-events-none shadow-[inset_0_0_100px_rgba(0,0,0,0.8)]" />
         </div>
 
         {/* Metadata panel */}

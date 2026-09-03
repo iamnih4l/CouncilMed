@@ -30,6 +30,8 @@
   },
   "bundle": {
     "active": true,
+    "externalBin": ["bin/app-backend"],
+    "resources": ["../model_registry", "../data"],
     "targets": "all",
     "icon": [
       "icons/32x32.png",

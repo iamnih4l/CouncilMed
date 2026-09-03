@@ -20,8 +20,10 @@ from .models import Base
 
 logger = logging.getLogger(__name__)
 
+from ..paths import get_base_dir
+
 # Default database path
-DEFAULT_DB_PATH = Path(__file__).parent.parent.parent / "data" / "councilmed.db"
+DEFAULT_DB_PATH = get_base_dir() / "data" / "councilmed.db"
 
 
 def get_database_url(db_path: str | Path | None = None) -> str:

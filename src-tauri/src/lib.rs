@@ -10,12 +10,15 @@ use std::process::Command;
 use std::sync::Mutex;
 use tauri::State;
 
+use tauri_plugin_shell::ShellExt;
+use tauri_plugin_shell::process::{CommandChild, CommandEvent};
+
 // ==============================
 // State
 // ==============================
 
 struct AppState {
-    backend_process: Mutex<Option<std::process::Child>>,
+    backend_process: Mutex<Option<CommandChild>>,
     backend_port: u16,
 }
 
@@ -25,32 +28,33 @@ struct AppState {
 
 /// Start the Python backend process
 #[tauri::command]
-fn start_backend(state: State<AppState>) -> Result<String, String> {
+fn start_backend(app: tauri::AppHandle, state: State<AppState>) -> Result<String, String> {
     let mut process_guard = state.backend_process.lock().map_err(|e| e.to_string())?;
 
     if process_guard.is_some() {
         return Ok("Backend already running".to_string());
     }
 
-    let port = state.backend_port;
-
-    // Start the Python backend
-    let child = Command::new("python")
-        .args([
-            "-m",
-            "uvicorn",
-            "backend.api.app:app",
-            "--port",
-            &port.to_string(),
-            "--host",
-            "127.0.0.1",
-        ])
+    let (mut rx, child) = app
+        .shell()
+        .sidecar("app-backend")
+        .map_err(|e| format!("Failed to create sidecar: {}", e))?
         .spawn()
-        .map_err(|e| format!("Failed to start backend: {}", e))?;
+        .map_err(|e| format!("Failed to spawn sidecar: {}", e))?;
+
+    tauri::async_runtime::spawn(async move {
+        while let Some(event) = rx.recv().await {
+            if let CommandEvent::Stdout(line) = event {
+                println!("backend: {}", String::from_utf8_lossy(&line));
+            } else if let CommandEvent::Stderr(line) = event {
+                eprintln!("backend err: {}", String::from_utf8_lossy(&line));
+            }
+        }
+    });
 
     *process_guard = Some(child);
 
-    Ok(format!("Backend started on port {}", port))
+    Ok(format!("Backend started on port {}", state.backend_port))
 }
 
 /// Stop the Python backend process
@@ -58,7 +62,7 @@ fn start_backend(state: State<AppState>) -> Result<String, String> {
 fn stop_backend(state: State<AppState>) -> Result<String, String> {
     let mut process_guard = state.backend_process.lock().map_err(|e| e.to_string())?;
 
-    if let Some(mut child) = process_guard.take() {
+    if let Some(child) = process_guard.take() {
         child.kill().map_err(|e| format!("Failed to stop backend: {}", e))?;
         Ok("Backend stopped".to_string())
     } else {
@@ -69,21 +73,8 @@ fn stop_backend(state: State<AppState>) -> Result<String, String> {
 /// Check if the Python backend is running
 #[tauri::command]
 fn check_backend(state: State<AppState>) -> Result<bool, String> {
-    let mut process_guard = state.backend_process.lock().map_err(|e| e.to_string())?;
-
-    if let Some(ref mut child) = *process_guard {
-        match child.try_wait() {
-            Ok(Some(_)) => {
-                // Process has exited
-                *process_guard = None;
-                Ok(false)
-            }
-            Ok(None) => Ok(true), // Still running
-            Err(e) => Err(format!("Error checking backend: {}", e)),
-        }
-    } else {
-        Ok(false)
-    }
+    let process_guard = state.backend_process.lock().map_err(|e| e.to_string())?;
+    Ok(process_guard.is_some())
 }
 
 /// Get the backend API URL
@@ -126,6 +117,27 @@ pub fn run() {
         .plugin(tauri_plugin_shell::init())
         .plugin(tauri_plugin_dialog::init())
         .plugin(tauri_plugin_fs::init())
+        .setup(|app| {
+            use tauri::Manager;
+            let (mut rx, child) = app
+                .shell()
+                .sidecar("app-backend")
+                .map_err(|e| e.to_string())?
+                .spawn()
+                .map_err(|e| e.to_string())?;
+
+            let mut process_guard = app.state::<AppState>().backend_process.lock().unwrap();
+            *process_guard = Some(child);
+
+            tauri::async_runtime::spawn(async move {
+                while let Some(event) = rx.recv().await {
+                    if let CommandEvent::Stdout(line) = event {
+                        println!("backend: {}", String::from_utf8_lossy(&line));
+                    }
+                }
+            });
+            Ok(())
+        })
         .invoke_handler(tauri::generate_handler![
             start_backend,
             stop_backend,
