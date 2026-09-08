@@ -45,7 +45,7 @@ class_names:
 
 # Input specification
 input_shape: [224, 224, 3]
-input_format: "HWC"
+input_format: "CHW"
 input_normalization: "0-1"
 
 # Weights

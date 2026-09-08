@@ -19,13 +19,14 @@ import {
   Shield, ShieldAlert, ShieldCheck, ShieldX,
   ChevronDown, ChevronUp, AlertTriangle,
   CheckCircle, XCircle, Clock, Cpu, Brain,
-  Eye, Activity, TrendingUp,
+  Eye, Activity, TrendingUp, Edit3,
 } from 'lucide-react';
 import type { CouncilResultResponse, ModelEvidenceResponse } from '../../services/api';
 
 interface CouncilEvidencePanelProps {
   result: CouncilResultResponse;
   onReview?: (decision: 'accepted' | 'rejected' | 'modified') => void;
+  reviewStatus?: 'accepted' | 'rejected' | 'modified' | null;
 }
 
 // ==============================
@@ -280,7 +281,7 @@ function ModelEvidenceCard({ evidence, index }: { evidence: ModelEvidenceRespons
 // Main Evidence Panel
 // ==============================
 
-export function CouncilEvidencePanel({ result, onReview }: CouncilEvidencePanelProps) {
+export function CouncilEvidencePanel({ result, onReview, reviewStatus }: CouncilEvidencePanelProps) {
   
 
   return (
@@ -352,30 +353,36 @@ export function CouncilEvidencePanel({ result, onReview }: CouncilEvidencePanelP
               </ul>
 
               {onReview && (
-                <div className="flex gap-2 mt-3">
+                <div className="flex items-center gap-2 mt-3">
                   <button
                     onClick={() => onReview('accepted')}
-                    className="flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-medium
-                      bg-emerald-500/10 text-emerald-400 border border-emerald-500/30
-                      hover:bg-emerald-500/20 transition-all"
+                    className={`flex-1 py-2 px-3 rounded-lg border text-xs font-medium flex items-center justify-center gap-1.5 transition-all ${
+                      reviewStatus === 'accepted'
+                        ? 'bg-emerald-500/20 border-emerald-500/50 text-emerald-300 shadow-[0_0_15px_rgba(16,185,129,0.2)]'
+                        : 'bg-emerald-500/5 border-emerald-500/20 text-emerald-400 hover:bg-emerald-500/10'
+                    }`}
                   >
                     <CheckCircle className="w-3.5 h-3.5" /> Accept
                   </button>
                   <button
-                    onClick={() => onReview('rejected')}
-                    className="flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-medium
-                      bg-red-500/10 text-red-400 border border-red-500/30
-                      hover:bg-red-500/20 transition-all"
+                    onClick={() => onReview('modified')}
+                    className={`flex-1 py-2 px-3 rounded-lg border text-xs font-medium flex items-center justify-center gap-1.5 transition-all ${
+                      reviewStatus === 'modified'
+                        ? 'bg-amber-500/20 border-amber-500/50 text-amber-300 shadow-[0_0_15px_rgba(245,158,11,0.2)]'
+                        : 'bg-amber-500/5 border-amber-500/20 text-amber-400 hover:bg-amber-500/10'
+                    }`}
                   >
-                    <XCircle className="w-3.5 h-3.5" /> Reject
+                    <Edit3 className="w-3.5 h-3.5" /> Modify
                   </button>
                   <button
-                    onClick={() => onReview('modified')}
-                    className="flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-medium
-                      bg-cyan-500/10 text-cyan-400 border border-cyan-500/30
-                      hover:bg-cyan-500/20 transition-all"
+                    onClick={() => onReview('rejected')}
+                    className={`flex-1 py-2 px-3 rounded-lg border text-xs font-medium flex items-center justify-center gap-1.5 transition-all ${
+                      reviewStatus === 'rejected'
+                        ? 'bg-red-500/20 border-red-500/50 text-red-300 shadow-[0_0_15px_rgba(239,68,68,0.2)]'
+                        : 'bg-red-500/5 border-red-500/20 text-red-400 hover:bg-red-500/10'
+                    }`}
                   >
-                    <Eye className="w-3.5 h-3.5" /> Modify
+                    <XCircle className="w-3.5 h-3.5" /> Reject
                   </button>
                 </div>
               )}

@@ -1,5 +1,10 @@
 import sys
+import os
 import multiprocessing
+
+# Add the project root to sys.path to allow imports from "backend" to work
+sys.path.insert(0, os.path.abspath(os.path.join(os.path.dirname(__file__), '..')))
+
 from backend.api.app import app
 import uvicorn
 

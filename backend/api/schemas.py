@@ -38,6 +38,7 @@ class ModelEvidenceResponse(BaseModel):
     status: str
     error_message: str | None = None
     device: str = "cpu"
+    bounding_box: dict[str, int] | None = None
 
 
 class CouncilResultResponse(BaseModel):

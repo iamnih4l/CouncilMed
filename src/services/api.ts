@@ -19,7 +19,7 @@ export interface ModelEvidenceResponse {
   processing_time_ms: number;
   status: 'success' | 'error' | 'unavailable' | 'timeout';
   error_message: string | null;
-  device: string;
+  bounding_box?: { x: number; y: number; width: number; height: number } | null;
 }
 
 export interface CouncilResultResponse {

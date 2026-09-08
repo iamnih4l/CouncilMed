@@ -26,7 +26,7 @@ function App() {
             <div className="h-screen w-full flex items-center justify-center bg-black text-white">
               <div className="flex flex-col items-center">
                 <div className="w-8 h-8 border-2 border-cyan-500 border-t-transparent rounded-full animate-spin" />
-                <p className="text-xs tracking-widest text-zinc-500 mt-4 uppercase">Loading Councilman...</p>
+                <p className="text-xs tracking-widest text-zinc-500 mt-4 uppercase">Loading CouncilMed...</p>
               </div>
             </div>
           }>
@@ -58,6 +58,11 @@ function App() {
           }
         }} 
       />
+      {import.meta.env.VITE_COUNCILMED_DEMO_MODE === 'true' && (
+        <div className="fixed top-2 right-2 z-50 bg-amber-500/20 border border-amber-500/50 text-amber-500 text-[10px] uppercase tracking-widest px-2 py-1 rounded backdrop-blur-md pointer-events-none">
+          Demonstration Data
+        </div>
+      )}
     </BrowserRouter>
   );
 }

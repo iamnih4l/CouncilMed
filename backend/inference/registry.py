@@ -167,9 +167,10 @@ class ModelRegistry:
         
         # Check if weights file exists
         if manifest.weights_path:
+            from ..paths import get_base_dir
             weights_path = Path(manifest.weights_path)
             if not weights_path.is_absolute():
-                weights_path = path.parent / weights_path
+                weights_path = get_base_dir() / weights_path
             manifest.installed = weights_path.exists()
             manifest.weights_path = str(weights_path)
         

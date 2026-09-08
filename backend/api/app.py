@@ -73,6 +73,7 @@ async def lifespan(app: FastAPI):
     
     # Initialize pipeline
     from ..paths import get_base_dir
+    from ..pipeline import AnalysisPipeline
     
     registry_dir = get_base_dir() / "model_registry"
     output_dir = get_base_dir() / "output"
@@ -150,6 +151,12 @@ async def analyze_image(request: AnalyzeRequest):
     
     All predictions are GENUINE — computed from real neural network forward passes.
     """
+    if os.environ.get("COUNCILMED_DEMO_MODE", "").lower() == "true":
+        import asyncio
+        from .demo_data import get_demo_analysis_result
+        await asyncio.sleep(2) # Simulate processing time
+        return get_demo_analysis_result("", request.file_path, request.study_id)
+
     if not _pipeline:
         raise HTTPException(status_code=503, detail="Pipeline not initialized")
     
@@ -190,6 +197,12 @@ async def analyze_uploaded_image(
     Upload and analyze a medical image.
     Accepts DICOM, NIfTI, JPEG, and PNG files.
     """
+    if os.environ.get("COUNCILMED_DEMO_MODE", "").lower() == "true":
+        import asyncio
+        from .demo_data import get_demo_analysis_result
+        await asyncio.sleep(2) # Simulate processing time
+        return get_demo_analysis_result("", file.filename, None)
+
     if not _pipeline:
         raise HTTPException(status_code=503, detail="Pipeline not initialized")
     
@@ -380,6 +393,14 @@ async def generate_report_endpoint(request: ReportRequest):
         ConsensusLevel, EvidenceStrength, SeverityLevel,
     )
 
+    if os.environ.get("COUNCILMED_DEMO_MODE", "").lower() == "true" and request.analysis_id.startswith("demo-"):
+        from .demo_data import get_demo_report
+        import asyncio
+        await asyncio.sleep(1)
+        report = get_demo_report(request.analysis_id, request.study_date)
+        _reports_cache[report.report_id] = report.model_dump()
+        return report
+
     # Reconstruct council result from the analysis ID
     # In production, this would query the database for the stored result
     # For now, we use the in-memory pipeline result cache
@@ -506,6 +527,16 @@ def _map_to_response(result) -> AnalyzeResponse:
     
     evidence_responses = []
     for ev in cr.member_evidence:
+        bbox = None
+        if ev.localization and ev.localization.bounding_box:
+            bb = ev.localization.bounding_box
+            bbox = {
+                "x": int(bb.x_min),
+                "y": int(bb.y_min),
+                "width": int(bb.x_max - bb.x_min),
+                "height": int(bb.y_max - bb.y_min),
+            }
+
         evidence_responses.append(ModelEvidenceResponse(
             model_id=ev.model_id,
             model_name=ev.model_name,
@@ -519,6 +550,7 @@ def _map_to_response(result) -> AnalyzeResponse:
             status=ev.status.value,
             error_message=ev.error_message,
             device=ev.device,
+            bounding_box=bbox,
         ))
     
     council_response = CouncilResultResponse(

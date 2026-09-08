@@ -25,6 +25,12 @@ import time
 from pathlib import Path
 from typing import Any
 
+# Import architectures so torch unpickler can find them
+try:
+    import backend.inference.models.architectures
+except ImportError:
+    pass
+
 import numpy as np
 
 from ..council.evidence import (
@@ -32,6 +38,7 @@ from ..council.evidence import (
     ModelStatus,
     LocalizationData,
     QualityMetrics,
+    BoundingBox,
 )
 from .registry import ModelManifest, ModelFramework
 
@@ -247,8 +254,9 @@ def run_inference(
         batch = np.expand_dims(preprocessed, axis=0).astype(np.float32)
         
         # Run inference based on framework
+        spatial_map = None
         if manifest.framework == ModelFramework.PYTORCH:
-            probabilities = _run_pytorch_inference(manifest, batch)
+            probabilities, spatial_map = _run_pytorch_inference(manifest, batch)
         elif manifest.framework == ModelFramework.ONNX:
             probabilities = _run_onnx_inference(manifest, batch)
         elif manifest.framework == ModelFramework.TENSORFLOW:
@@ -273,6 +281,33 @@ def run_inference(
         max_entropy = np.log2(max(len(probs_array), 2))
         uncertainty = float(entropy / max_entropy) if max_entropy > 0 else 0.0
         
+        # Compute bounding box from spatial map
+        localization = None
+        if spatial_map is not None:
+            if spatial_map.ndim == 3:
+                spatial_map = spatial_map.max(axis=0)
+            
+            threshold = spatial_map.max() * 0.5
+            y_indices, x_indices = np.where(spatial_map > threshold)
+            
+            if len(y_indices) > 0 and len(x_indices) > 0:
+                map_h, map_w = spatial_map.shape
+                orig_h, orig_w = 512, 512 # Standardized coordinate space
+                
+                x_min = (x_indices.min() / map_w) * orig_w
+                x_max = ((x_indices.max() + 1) / map_w) * orig_w
+                y_min = (y_indices.min() / map_h) * orig_h
+                y_max = ((y_indices.max() + 1) / map_h) * orig_h
+                
+                localization = LocalizationData(
+                    bounding_box=BoundingBox(
+                        x_min=float(x_min),
+                        y_min=float(y_min),
+                        x_max=float(x_max),
+                        y_max=float(y_max),
+                    )
+                )
+        
         elapsed_ms = (time.perf_counter() - start_time) * 1000
         
         return ModelEvidence(
@@ -288,6 +323,7 @@ def run_inference(
             status=ModelStatus.SUCCESS,
             input_hash=input_hash,
             device=DEVICE,
+            localization=localization,
         )
         
     except FileNotFoundError as e:
@@ -332,7 +368,7 @@ def run_inference(
 def _run_pytorch_inference(
     manifest: ModelManifest,
     batch: np.ndarray,
-) -> np.ndarray:
+) -> tuple[np.ndarray, np.ndarray | None]:
     """Run inference with a PyTorch model."""
     import torch
     
@@ -342,13 +378,18 @@ def _run_pytorch_inference(
     
     with torch.no_grad():
         output = model(tensor)
+        
+    spatial_map = None
+    if isinstance(output, tuple):
+        spatial_map = output[1].cpu().numpy()[0] if output[1] is not None else None
+        output = output[0]
     
     # Apply softmax if not already applied
     if isinstance(output, torch.Tensor):
         probs = torch.softmax(output, dim=-1)
-        return probs.cpu().numpy()[0]
+        return probs.cpu().numpy()[0], spatial_map
     
-    return output
+    return output, spatial_map
 
 
 def _run_onnx_inference(

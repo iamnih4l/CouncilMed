@@ -45,7 +45,7 @@ export function CinematicBootSequence({ onComplete }: Props) {
         className="text-center z-10"
       >
         <h1 className="text-4xl md:text-6xl font-light tracking-[0.3em] text-white mb-8 text-glow">
-          COUNCILMAN
+          COUNCILMED
         </h1>
         
         <div className="h-6 overflow-hidden">

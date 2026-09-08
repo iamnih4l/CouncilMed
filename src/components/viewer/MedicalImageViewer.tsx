@@ -40,6 +40,7 @@ interface MedicalImageViewerProps {
   metadata?: Record<string, string>;
   modality?: string;
   anatomy?: string;
+  boxes?: { x: number, y: number, width: number, height: number }[];
   className?: string;
 }
 
@@ -51,6 +52,7 @@ export function MedicalImageViewer({
   metadata,
   modality = 'Unknown',
   anatomy = 'Unknown',
+  boxes = [],
   className = '',
 }: MedicalImageViewerProps) {
   const canvasRef = useRef<HTMLCanvasElement>(null);
@@ -75,18 +77,41 @@ export function MedicalImageViewer({
 
   const imageRef = useRef<HTMLImageElement | null>(null);
   const overlayRef = useRef<HTMLImageElement | null>(null);
+  const [imageLoaded, setImageLoaded] = useState(false);
+  const glowPhaseRef = useRef(0);
+  const animationRef = useRef<number | null>(null);
+
+  const coordSpace = Math.max(imageShape?.[0] ?? 512, imageShape?.[1] ?? 512, 512);
 
   // Load images when URLs change
   useEffect(() => {
-    if (!imageUrl) return;
+    if (!imageUrl) {
+      imageRef.current = null;
+      setImageLoaded(false);
+      return;
+    }
 
+    setImageLoaded(false);
     const img = new Image();
-    img.crossOrigin = 'anonymous';
+    if (!imageUrl.startsWith('data:') && !imageUrl.startsWith('blob:')) {
+      img.crossOrigin = 'anonymous';
+    }
     img.onload = () => {
+      console.log('Image successfully loaded!', { width: img.width, height: img.height, src: img.src.substring(0, 50) + '...' });
       imageRef.current = img;
-      renderCanvas();
+      setImageLoaded(true);
+    };
+    img.onerror = (e) => {
+      console.error('Image failed to load!', e, { src: imageUrl.substring(0, 50) + '...' });
+      imageRef.current = null;
+      setImageLoaded(false);
     };
     img.src = imageUrl;
+
+    return () => {
+      img.onload = null;
+      img.onerror = null;
+    };
   }, [imageUrl]);
 
   useEffect(() => {
@@ -99,9 +124,13 @@ export function MedicalImageViewer({
     img.crossOrigin = 'anonymous';
     img.onload = () => {
       overlayRef.current = img;
-      renderCanvas();
+      setImageLoaded(prev => prev);
     };
     img.src = overlayUrl;
+
+    return () => {
+      img.onload = null;
+    };
   }, [overlayUrl]);
 
   // Render the canvas
@@ -117,19 +146,22 @@ export function MedicalImageViewer({
     const dpr = window.devicePixelRatio || 1;
     const rect = container.getBoundingClientRect();
 
-    canvas.width = rect.width * dpr;
-    canvas.height = rect.height * dpr;
+    const viewW = rect.width;
+    const viewH = rect.height;
 
-    ctx.scale(dpr, dpr);
+    canvas.width = viewW * dpr;
+    canvas.height = viewH * dpr;
+
+    ctx.setTransform(dpr, 0, 0, dpr, 0, 0);
 
     // Clear canvas
     ctx.fillStyle = '#000000';
-    ctx.fillRect(0, 0, canvas.width, canvas.height);
+    ctx.fillRect(0, 0, viewW, viewH);
 
     // If no image, render empty state
     if (!imageUrl) {
       ctx.fillStyle = '#18181b'; // zinc-900
-      ctx.fillRect(0, 0, canvas.width, canvas.height);
+      ctx.fillRect(0, 0, viewW, viewH);
       return;
     }
 
@@ -144,28 +176,33 @@ export function MedicalImageViewer({
       
       // Top Right: Window Level
       context.textAlign = 'right';
-      context.fillText(`W: ${state.windowWidth.toFixed(0)} L: ${state.windowCenter.toFixed(0)}`, w/dpr - 10, 20);
+      context.fillText(`W: ${state.windowWidth.toFixed(0)} L: ${state.windowCenter.toFixed(0)}`, viewW - 10, 20);
       
       // Bottom Left: Zoom
       context.textAlign = 'left';
-      context.fillText(`Zoom: ${(state.zoom * 100).toFixed(0)}%`, 10, h/dpr - 10);
+      context.fillText(`Zoom: ${(state.zoom * 100).toFixed(0)}%`, 10, viewH - 10);
       
-      // Bottom Right: Image size (mocked 512x512)
+      // Bottom Right: Image size
       context.textAlign = 'right';
-      context.fillText(`512 x 512`, w/dpr - 10, h/dpr - 10);
+      const sizeLabel = imageShape?.length
+        ? `${imageShape[0]} x ${imageShape[1]}`
+        : imageRef.current
+          ? `${imageRef.current.width} x ${imageRef.current.height}`
+          : '—';
+      context.fillText(sizeLabel, viewW - 10, viewH - 10);
       
       if (state.invert) {
-        context.fillText('INVERTED', w/dpr - 10, 35);
+        context.fillText('INVERTED', viewW - 10, 35);
       }
       
       // Draw crosshairs at center
       context.beginPath();
       context.strokeStyle = 'rgba(0, 240, 255, 0.3)';
       context.lineWidth = 1;
-      context.moveTo(w/(2*dpr), 0);
-      context.lineTo(w/(2*dpr), h/dpr);
-      context.moveTo(0, h/(2*dpr));
-      context.lineTo(w/dpr, h/(2*dpr));
+      context.moveTo(viewW / 2, 0);
+      context.lineTo(viewW / 2, viewH);
+      context.moveTo(0, viewH / 2);
+      context.lineTo(viewW, viewH / 2);
       context.stroke();
       
       // Draw targeting corners
@@ -176,17 +213,17 @@ export function MedicalImageViewer({
       // Top Left
       context.beginPath(); context.moveTo(10, 10 + cornerSize); context.lineTo(10, 10); context.lineTo(10 + cornerSize, 10); context.stroke();
       // Top Right
-      context.beginPath(); context.moveTo(w/dpr - 10 - cornerSize, 10); context.lineTo(w/dpr - 10, 10); context.lineTo(w/dpr - 10, 10 + cornerSize); context.stroke();
+      context.beginPath(); context.moveTo(viewW - 10 - cornerSize, 10); context.lineTo(viewW - 10, 10); context.lineTo(viewW - 10, 10 + cornerSize); context.stroke();
       // Bottom Left
-      context.beginPath(); context.moveTo(10, h/dpr - 10 - cornerSize); context.lineTo(10, h/dpr - 10); context.lineTo(10 + cornerSize, h/dpr - 10); context.stroke();
+      context.beginPath(); context.moveTo(10, viewH - 10 - cornerSize); context.lineTo(10, viewH - 10); context.lineTo(10 + cornerSize, viewH - 10); context.stroke();
       // Bottom Right
-      context.beginPath(); context.moveTo(w/dpr - 10 - cornerSize, h/dpr - 10); context.lineTo(w/dpr - 10, h/dpr - 10); context.lineTo(w/dpr - 10, h/dpr - 10 - cornerSize); context.stroke();
+      context.beginPath(); context.moveTo(viewW - 10 - cornerSize, viewH - 10); context.lineTo(viewW - 10, viewH - 10); context.lineTo(viewW - 10, viewH - 10 - cornerSize); context.stroke();
     };
 
     ctx.save();
 
     // Center origin
-    ctx.translate(rect.width / 2 + state.panX, rect.height / 2 + state.panY);
+    ctx.translate(viewW / 2 + state.panX, viewH / 2 + state.panY);
 
     // Apply rotation
     ctx.rotate((state.rotation * Math.PI) / 180);
@@ -194,39 +231,111 @@ export function MedicalImageViewer({
     // Apply zoom
     ctx.scale(state.zoom, state.zoom);
 
-    // --- In a real viewer, we would draw the medical image here ---
-    // ctx.drawImage(imageElement, -imgW/2, -imgH/2, imgW, imgH);
-    //
-    // For this prototype, we'll draw a simulated placeholder that reacts to WW/WL
-    const size = Math.min(rect.width, rect.height) * 0.8;
-    
     // Simulate Window/Level with contrast/brightness filters
-    // A real DICOM viewer uses a lookup table (LUT) on 16-bit pixel data
-    const brightness = ((state.windowCenter - 128) / 128) * 100; // rough approximation
-    const contrast = (state.windowWidth / 256) * 100;
-    const invertFilter = state.invert ? 'invert(100%)' : '';
+    // Default width=400, center=200
+    const contrastVal = state.windowWidth === 0 ? 1 : 400 / state.windowWidth;
+    const brightnessVal = 1 + ((200 - state.windowCenter) / 200);
+    const contrastStr = `contrast(${Math.max(0, contrastVal)})`;
+    const brightnessStr = `brightness(${Math.max(0, brightnessVal)})`;
+    const invertStr = state.invert ? 'invert(1) ' : '';
+    ctx.filter = `${invertStr}${contrastStr} ${brightnessStr}`;
     
-    ctx.filter = `brightness(${100 + brightness}%) contrast(${contrast}%) ${invertFilter}`;
-    
-    ctx.fillStyle = '#27272a'; // zinc-800
-    ctx.fillRect(-size/2, -size/2, size, size);
-    
-    ctx.fillStyle = '#52525b';
-    ctx.beginPath();
-    ctx.arc(0, 0, size/4, 0, Math.PI * 2);
-    ctx.fill();
+    const img = imageRef.current;
+    if (img && img.width > 0 && imageLoaded) {
+      // Calculate scaling to fit within canvas initially
+      const size = Math.min(viewW, viewH) * 0.8;
+      const scale = Math.min(size / img.width, size / img.height);
+      const imgW = img.width * scale;
+      const imgH = img.height * scale;
+      
+      // Draw actual medical image
+      ctx.drawImage(img, -imgW/2, -imgH/2, imgW, imgH);
+
+      // Draw Grad-CAM overlay when available
+      const overlay = overlayRef.current;
+      if (overlay && overlay.width > 0 && state.showOverlay) {
+        ctx.globalAlpha = 0.45;
+        ctx.drawImage(overlay, -imgW/2, -imgH/2, imgW, imgH);
+        ctx.globalAlpha = 1;
+      }
+      
+      // Draw glowing bounding boxes from council evidence
+      if (boxes && boxes.length > 0) {
+        ctx.filter = 'none';
+        const glowIntensity = 0.55 + 0.45 * Math.sin(glowPhaseRef.current);
+
+        boxes.forEach(box => {
+          const mappedX = -imgW/2 + (box.x / coordSpace) * imgW;
+          const mappedY = -imgH/2 + (box.y / coordSpace) * imgH;
+          const mappedW = (box.width / coordSpace) * imgW;
+          const mappedH = (box.height / coordSpace) * imgH;
+
+          ctx.save();
+          ctx.shadowColor = `rgba(0, 240, 255, ${0.35 + glowIntensity * 0.45})`;
+          ctx.shadowBlur = 12 + glowIntensity * 10;
+
+          ctx.beginPath();
+          ctx.rect(mappedX, mappedY, mappedW, mappedH);
+          ctx.strokeStyle = `rgba(0, 240, 255, ${0.75 + glowIntensity * 0.25})`;
+          ctx.lineWidth = 2 / state.zoom;
+          ctx.stroke();
+
+          ctx.shadowBlur = 0;
+          ctx.fillStyle = `rgba(0, 240, 255, ${0.12 + glowIntensity * 0.12})`;
+          ctx.fill();
+          ctx.restore();
+        });
+      }
+    } else if (imageUrl) {
+      // Fallback placeholder
+      const size = Math.min(viewW, viewH) * 0.8;
+      ctx.fillStyle = '#27272a'; // zinc-800
+      ctx.fillRect(-size/2, -size/2, size, size);
+      ctx.fillStyle = '#52525b';
+      ctx.beginPath();
+      ctx.arc(0, 0, size/4, 0, Math.PI * 2);
+      ctx.fill();
+    }
     
     ctx.filter = 'none';
     ctx.restore();
 
     // Draw viewer annotations
-    _drawAnnotations(ctx, canvas.width, canvas.height);
-  }, [state, imageUrl, fileName, imageShape, pixelValue, cursorPos]);
+    _drawAnnotations(ctx, viewW, viewH);
+  }, [state, imageUrl, imageLoaded, fileName, imageShape, pixelValue, cursorPos, boxes, modality, anatomy, coordSpace]);
 
   // Re-render when state changes
   useEffect(() => {
     renderCanvas();
   }, [renderCanvas]);
+
+  // Pulse bounding-box glow while detections are visible
+  useEffect(() => {
+    if (!boxes.length) {
+      if (animationRef.current) {
+        cancelAnimationFrame(animationRef.current);
+        animationRef.current = null;
+      }
+      return;
+    }
+
+    let running = true;
+    const animate = () => {
+      if (!running) return;
+      glowPhaseRef.current += 0.08;
+      renderCanvas();
+      animationRef.current = requestAnimationFrame(animate);
+    };
+
+    animationRef.current = requestAnimationFrame(animate);
+    return () => {
+      running = false;
+      if (animationRef.current) {
+        cancelAnimationFrame(animationRef.current);
+        animationRef.current = null;
+      }
+    };
+  }, [boxes, renderCanvas]);
 
   // Resize observer
   useEffect(() => {
@@ -253,11 +362,17 @@ export function MedicalImageViewer({
     const y = Math.round(e.clientY - rect.top);
     setCursorPos({ x, y });
 
-    // Get pixel value under cursor
-    const ctx = canvas.getContext('2d');
-    if (ctx) {
-      const pixel = ctx.getImageData(x, y, 1, 1).data;
-      setPixelValue(pixel[0]); // Grayscale value
+    // Get pixel value under cursor only when not dragging to avoid lag
+    if (!isDragging) {
+      const ctx = canvas.getContext('2d');
+      if (ctx) {
+        try {
+          const pixel = ctx.getImageData(x, y, 1, 1).data;
+          setPixelValue(pixel[0]); // Grayscale value
+        } catch (e) {
+          // Ignore CORS canvas taint errors
+        }
+      }
     }
 
     if (!isDragging) return;
@@ -420,14 +535,16 @@ export function MedicalImageViewer({
             className="absolute inset-0 w-full h-full"
           />
 
-          {!imageUrl && (
+          {!imageUrl || !imageLoaded ? (
             <div className="absolute inset-0 flex items-center justify-center pointer-events-none">
               <div className="text-center text-cyan-500/30">
-                <Grid3x3 className="w-12 h-12 mx-auto mb-2 opacity-50" />
-                <p className="text-sm font-mono tracking-widest uppercase">No data source</p>
+                <Grid3x3 className="w-12 h-12 mx-auto mb-2 opacity-50 animate-pulse" />
+                <p className="text-sm font-mono tracking-widest uppercase">
+                  {!imageUrl ? 'No data source' : 'Loading image...'}
+                </p>
               </div>
             </div>
-          )}
+          ) : null}
 
           {/* Cinematic Scanline Overlay */}
           <div className="absolute inset-0 pointer-events-none bg-[url('/scanline.png')] opacity-20 mix-blend-overlay" />

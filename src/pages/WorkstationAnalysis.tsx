@@ -8,12 +8,13 @@
  * The image/study is the CENTER of the experience.
  */
 
-import { useState, useCallback, useRef } from 'react';
+import { useState, useCallback, useRef, useEffect } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
+import { useNavigate } from 'react-router-dom';
 import {
   Upload, FileImage, AlertCircle, ChevronRight,
   RotateCcw, Info,
-  Bot, Sparkles, Brain
+  Bot, Sparkles, Brain, FileText
 } from 'lucide-react';
 import { HudPanel } from '../components/ui/HudPanel';
 import { WorkspaceEnvironment } from '../components/3d/WorkspaceEnvironment';
@@ -25,38 +26,61 @@ import { api } from '../services/api';
 
 export default function WorkstationAnalysis() {
   const analysis = useCouncilAnalysis();
+  const navigate = useNavigate();
   const [imagePreview, setImagePreview] = useState<string | null>(null);
   const [fileName, setFileName] = useState<string>('');
   
   const [showAgent, setShowAgent] = useState(false);
   const [selectedModality, setSelectedModality] = useState<string>('Brain MRI');
+  const [reviewStatus, setReviewStatus] = useState<'accepted' | 'rejected' | 'modified' | null>(null);
   const fileInputRef = useRef<HTMLInputElement>(null);
+  const previewUrlRef = useRef<string | null>(null);
+
+  const setPreviewFromFile = useCallback((file: File) => {
+    if (previewUrlRef.current) {
+      URL.revokeObjectURL(previewUrlRef.current);
+      previewUrlRef.current = null;
+    }
+
+    const ext = file.name.split('.').pop()?.toLowerCase();
+    if (['jpg', 'jpeg', 'png', 'bmp', 'tiff', 'webp'].includes(ext || '')) {
+      const objectUrl = URL.createObjectURL(file);
+      previewUrlRef.current = objectUrl;
+      setImagePreview(objectUrl);
+    } else {
+      setImagePreview(null);
+    }
+  }, []);
+
+  useEffect(() => () => {
+    if (previewUrlRef.current) {
+      URL.revokeObjectURL(previewUrlRef.current);
+    }
+  }, []);
+
+  const parseModality = useCallback((label: string) => {
+    const parts = label.split(' ');
+    const anatomy = parts[0].toLowerCase();
+    const modality = parts.slice(1).join('').replace('-', '');
+    return { anatomy, modality };
+  }, []);
+
+  const processFile = useCallback(async (file: File) => {
+    setFileName(file.name);
+    setPreviewFromFile(file);
+    setReviewStatus(null);
+
+    const { anatomy, modality } = parseModality(selectedModality);
+    await analysis.analyzeFile(file, { modality, anatomy });
+  }, [analysis, parseModality, selectedModality, setPreviewFromFile]);
 
   const handleFileSelect = useCallback(async (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0];
     if (!file) return;
 
-    setFileName(file.name);
-
-    // Create image preview for standard images
-    const ext = file.name.split('.').pop()?.toLowerCase();
-    if (['jpg', 'jpeg', 'png', 'bmp', 'tiff'].includes(ext || '')) {
-      const reader = new FileReader();
-      reader.onload = (ev) => setImagePreview(ev.target?.result as string);
-      reader.readAsDataURL(file);
-    } else {
-      // DICOM/NIfTI — no browser preview, backend will handle
-      setImagePreview(null);
-    }
-
-    // Reset file input so same file can be selected again
     if (fileInputRef.current) fileInputRef.current.value = '';
-
-    // Run analysis with mapped modality/anatomy
-    const anatomy = selectedModality.split(' ')[0].toLowerCase();
-    const modality = selectedModality.split(' ')[1].replace('-', '');
-    await analysis.analyzeFile(file, { modality, anatomy });
-  }, [analysis, selectedModality]);
+    await processFile(file);
+  }, [processFile]);
 
   const handleDrop = useCallback(async (e: React.DragEvent) => {
     e.preventDefault();
@@ -65,21 +89,20 @@ export default function WorkstationAnalysis() {
     const file = e.dataTransfer.files[0];
     if (!file) return;
 
-    setFileName(file.name);
+    await processFile(file);
+  }, [processFile]);
 
-    const ext = file.name.split('.').pop()?.toLowerCase();
-    if (['jpg', 'jpeg', 'png', 'bmp', 'tiff'].includes(ext || '')) {
-      const reader = new FileReader();
-      reader.onload = (ev) => setImagePreview(ev.target?.result as string);
-      reader.readAsDataURL(file);
-    } else {
-      setImagePreview(null);
+  const handleNewImage = useCallback(() => {
+    analysis.reset();
+    setFileName('');
+    if (previewUrlRef.current) {
+      URL.revokeObjectURL(previewUrlRef.current);
+      previewUrlRef.current = null;
     }
-
-    const anatomy = selectedModality.split(' ')[0].toLowerCase();
-    const modality = selectedModality.split(' ')[1].replace('-', '');
-    await analysis.analyzeFile(file, { modality, anatomy });
-  }, [analysis, selectedModality]);
+    setImagePreview(null);
+    setReviewStatus(null);
+    fileInputRef.current?.click();
+  }, [analysis]);
 
   const handleDragOver = useCallback((e: React.DragEvent) => {
     e.preventDefault();
@@ -94,6 +117,7 @@ export default function WorkstationAnalysis() {
         decision,
         reviewer_name: 'Clinician',
       });
+      setReviewStatus(decision);
     } catch (err) {
       console.error('Review submission failed:', err);
     }
@@ -101,6 +125,8 @@ export default function WorkstationAnalysis() {
 
   const coreState = analysis.status === 'analyzing' ? 'processing' : 
                       analysis.status === 'complete' ? 'complete' : 'idle';
+
+  const showViewer = Boolean(imagePreview || fileName || analysis.isProcessing || analysis.result);
 
   return (
     <div className="h-full flex flex-col relative">
@@ -137,7 +163,7 @@ export default function WorkstationAnalysis() {
 
         {/* Left: Image Viewer (3/5 width) */}
         <div className="lg:col-span-3 flex flex-col min-h-0">
-          {!analysis.result && !analysis.isProcessing ? (
+          {!showViewer ? (
             /* Upload Drop Zone */
             <HudPanel
               className="flex-1 flex flex-col items-center justify-center cursor-pointer min-h-[400px]
@@ -203,7 +229,7 @@ export default function WorkstationAnalysis() {
             <div className="flex-1 flex flex-col min-h-[400px] relative">
               {/* Processing overlay */}
               {analysis.isProcessing && (
-                <div className="absolute inset-0 flex flex-col items-center justify-center z-30 bg-black/80 backdrop-blur-md rounded-xl cinematic-border">
+                <div className="absolute inset-0 flex flex-col items-center justify-center z-30 bg-black/50 backdrop-blur-sm rounded-xl cinematic-border pointer-events-none">
                   <div className="w-16 h-16 border-t-2 border-cyan-500 rounded-full animate-spin mb-6" />
                   
                   <div className="h-8 overflow-hidden mb-2">
@@ -241,7 +267,7 @@ export default function WorkstationAnalysis() {
               {/* New Image button */}
               <div className="absolute top-2 right-2 z-20">
                 <button
-                  onClick={() => fileInputRef.current?.click()}
+                  onClick={handleNewImage}
                   className="flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-medium
                     bg-black/60 text-zinc-400 hover:bg-black/80 hover:text-white transition-all backdrop-blur-sm"
                 >
@@ -260,6 +286,8 @@ export default function WorkstationAnalysis() {
                 <MedicalImageViewer
                   imageUrl={imagePreview}
                   fileName={fileName}
+                  modality={analysis.result?.modality ?? selectedModality.split(' ').slice(1).join(' ')}
+                  anatomy={analysis.result?.anatomy ?? selectedModality.split(' ')[0]}
                   imageShape={analysis.result?.image_shape}
                   metadata={analysis.result ? {
                     'Modality': analysis.result.modality,
@@ -269,6 +297,10 @@ export default function WorkstationAnalysis() {
                     'Total Time': `${analysis.result.total_time_ms.toFixed(0)}ms`,
                     'Models Used': `${analysis.result.council_result.models_total}`,
                   } : undefined}
+                  boxes={analysis.result?.council_result.member_evidence
+                    ?.map(e => e.bounding_box)
+                    .filter((b): b is NonNullable<typeof b> => b != null)
+                  }
                   className="flex-1"
                 />
               </HudPanel>
@@ -314,7 +346,22 @@ export default function WorkstationAnalysis() {
               <CouncilEvidencePanel
                 result={analysis.result.council_result}
                 onReview={handleReview}
+                reviewStatus={reviewStatus}
               />
+
+              {/* View Report Button */}
+              <motion.div
+                initial={{ opacity: 0, y: 20 }}
+                animate={{ opacity: 1, y: 0 }}
+                className="mt-4"
+              >
+                <button
+                  onClick={() => navigate('/reports')}
+                  className="w-full flex items-center justify-center gap-2 py-3 rounded-lg border border-cyan-500/30 bg-cyan-500/10 text-cyan-400 font-mono tracking-widest text-xs uppercase hover:bg-cyan-500/20 transition-all hover:shadow-[0_0_20px_rgba(0,240,255,0.2)]"
+                >
+                  <FileText className="w-4 h-4" /> View Generated Report
+                </button>
+              </motion.div>
 
               {/* Agent Insight (if available) */}
               {analysis.result.agent_insight && (
