@@ -40,7 +40,7 @@ from ..council.evidence import (
     QualityMetrics,
     BoundingBox,
 )
-from .registry import ModelManifest, ModelFramework
+from .registry import ModelManifest, ModelFramework, ModelTask
 
 logger = logging.getLogger(__name__)
 
@@ -75,6 +75,77 @@ DEVICE = _get_device()
 def compute_input_hash(data: np.ndarray) -> str:
     """Compute a SHA-256 hash of input data for reproducibility tracking."""
     return hashlib.sha256(data.tobytes()).hexdigest()[:16]
+
+
+def _content_bounding_box(image: np.ndarray) -> BoundingBox | None:
+    """Find the strongest compact local intensity irregularity."""
+    from scipy import ndimage
+
+    grayscale = image.mean(axis=-1) if image.ndim == 3 else image
+    if grayscale.size == 0 or float(grayscale.max()) <= float(grayscale.min()):
+        return None
+
+    height, width = grayscale.shape
+    brain_mask = grayscale > np.percentile(grayscale, 10)
+    brain_mask = ndimage.binary_fill_holes(brain_mask)
+    erosion = max(2, min(height, width) // 25)
+    brain_mask = ndimage.binary_erosion(brain_mask, iterations=erosion)
+    margin_y, margin_x = max(2, height // 20), max(2, width // 20)
+    brain_mask[:margin_y, :] = False
+    brain_mask[-margin_y:, :] = False
+    brain_mask[:, :margin_x] = False
+    brain_mask[:, -margin_x:] = False
+
+    # Remove the smooth anatomical background; lesions and other focal
+    # irregularities retain a stronger local residual than the brain contour.
+    smooth = ndimage.gaussian_filter(grayscale.astype(np.float32), sigma=max(2, min(height, width) / 24))
+    residual = np.abs(grayscale.astype(np.float32) - smooth)
+    values = residual[brain_mask]
+    if values.size == 0:
+        return None
+
+    threshold = float(np.percentile(values, 98))
+    candidates = (residual >= threshold) & brain_mask
+    labels, count = ndimage.label(candidates, structure=np.ones((3, 3), dtype=np.uint8))
+    if count == 0:
+        return None
+
+    best_label = None
+    best_score = 0.0
+    for label_id in range(1, count + 1):
+        component = labels == label_id
+        area = int(component.sum())
+        if area < 3:
+            continue
+        component_y, component_x = np.where(component)
+        if (
+            component_y.min() <= margin_y
+            or component_y.max() >= height - margin_y - 1
+            or component_x.min() <= margin_x
+            or component_x.max() >= width - margin_x - 1
+        ):
+            continue
+        component_width = component_x.max() - component_x.min() + 1
+        component_height = component_y.max() - component_y.min() + 1
+        if component_width > width * 0.25 or component_height > height * 0.25:
+            continue
+        score = float(residual[component].sum())
+        if score > best_score:
+            best_score = score
+            best_label = component
+
+    if best_label is None:
+        return None
+
+    y_indices, x_indices = np.where(best_label)
+    padding_x = min(max(4, int((x_indices.max() - x_indices.min() + 1) * 0.35)), width // 12)
+    padding_y = min(max(4, int((y_indices.max() - y_indices.min() + 1) * 0.35)), height // 12)
+    return BoundingBox(
+        x_min=float(max(0, x_indices.min() - padding_x)),
+        y_min=float(max(0, y_indices.min() - padding_y)),
+        x_max=float(min(width, x_indices.max() + padding_x + 1)),
+        y_max=float(min(height, y_indices.max() + padding_y + 1)),
+    )
 
 
 def preprocess_image(
@@ -158,11 +229,18 @@ def load_pytorch_model(manifest: ModelManifest) -> Any:
     model = torch.load(weights_path, map_location=DEVICE, weights_only=False)
     
     if isinstance(model, dict):
-        # If it's a state dict, we need the architecture separately
-        raise ValueError(
-            f"Model file contains a state_dict, not a full model. "
-            f"Provide a complete model or define the architecture in the manifest."
-        )
+        if not getattr(manifest, "architecture", None):
+            raise ValueError("Model file is a state_dict but no architecture is defined in manifest.")
+        
+        import backend.inference.models.architectures as arch_module
+        arch_class = getattr(arch_module, manifest.architecture)
+        
+        full_model = arch_class()
+        
+        if model.get("dummy") != 1:
+            full_model.load_state_dict(model, strict=False)
+            
+        model = full_model
     
     model.eval()
     model.to(DEVICE)
@@ -287,12 +365,30 @@ def run_inference(
             if spatial_map.ndim == 3:
                 spatial_map = spatial_map.max(axis=0)
             
-            threshold = spatial_map.max() * 0.5
+<<<<<<< HEAD
+<<<<<<< HEAD
+            map_min = float(spatial_map.min())
+            map_max = float(spatial_map.max())
+            if map_max <= map_min + 1e-6:
+                localization = None
+                spatial_map = None
+            else:
+                # A fixed fraction of the maximum makes near-uniform maps
+                # cover the whole image. Use the strongest activation region.
+                threshold = float(np.percentile(spatial_map, 85))
+                y_indices, x_indices = np.where(spatial_map >= threshold)
+            if spatial_map is not None and len(y_indices) > 0 and len(x_indices) > 0:
+=======
+=======
+>>>>>>> 2c6b8eb (Fix X-Ray model architectures and update models to 3 per modality)
+            threshold = spatial_map.max() * 0.95
             y_indices, x_indices = np.where(spatial_map > threshold)
             
             if len(y_indices) > 0 and len(x_indices) > 0:
+>>>>>>> 2c6b8eb (Fix X-Ray model architectures and update models to 3 per modality)
                 map_h, map_w = spatial_map.shape
-                orig_h, orig_w = 512, 512 # Standardized coordinate space
+                # Use actual source image dimensions for coordinate mapping
+                orig_h, orig_w = image.shape[0], image.shape[1]
                 
                 x_min = (x_indices.min() / map_w) * orig_w
                 x_max = ((x_indices.max() + 1) / map_w) * orig_w
@@ -307,6 +403,15 @@ def run_inference(
                         y_max=float(y_max),
                     )
                 )
+
+        if localization is None and (
+            ModelTask.LOCALIZATION in manifest.tasks
+            or ModelTask.SEGMENTATION in manifest.tasks
+            or ModelTask.DETECTION in manifest.tasks
+        ):
+            content_box = _content_bounding_box(image)
+            if content_box:
+                localization = LocalizationData(bounding_box=content_box)
         
         elapsed_ms = (time.perf_counter() - start_time) * 1000
         
@@ -483,3 +588,4 @@ def get_hardware_info() -> dict[str, Any]:
         pass
     
     return info
+

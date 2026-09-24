@@ -22,6 +22,9 @@ import { CouncilEvidencePanel } from '../components/council/CouncilEvidencePanel
 import { MedicalImageViewer } from '../components/viewer/MedicalImageViewer';
 import { useCouncilAnalysis } from '../hooks/useCouncilAnalysis';
 import { api } from '../services/api';
+import type { OverlayResponse } from '../services/api';
+
+const API_BASE = 'http://localhost:8000';
 
 
 export default function WorkstationAnalysis() {
@@ -71,7 +74,17 @@ export default function WorkstationAnalysis() {
     setReviewStatus(null);
 
     const { anatomy, modality } = parseModality(selectedModality);
-    await analysis.analyzeFile(file, { modality, anatomy });
+    const result = await analysis.analyzeFile(file, { modality, anatomy });
+    
+    // Once analysis completes, use the backend-generated preview if available.
+    // This covers DICOM/NIfTI files that can't be displayed as ObjectURLs.
+    if (result?.media?.preview_url) {
+      if (previewUrlRef.current) {
+        URL.revokeObjectURL(previewUrlRef.current);
+        previewUrlRef.current = null;
+      }
+      setImagePreview(`${API_BASE}${result.media.preview_url}`);
+    }
   }, [analysis, parseModality, selectedModality, setPreviewFromFile]);
 
   const handleFileSelect = useCallback(async (e: React.ChangeEvent<HTMLInputElement>) => {
@@ -283,8 +296,7 @@ export default function WorkstationAnalysis() {
               </div>
 
               <HudPanel className="flex-1 flex flex-col p-0 overflow-hidden">
-                <MedicalImageViewer
-                  imageUrl={imagePreview}
+                <MedicalImageViewer imageUrl={imagePreview}
                   fileName={fileName}
                   modality={analysis.result?.modality ?? selectedModality.split(' ').slice(1).join(' ')}
                   anatomy={analysis.result?.anatomy ?? selectedModality.split(' ')[0]}
@@ -301,6 +313,10 @@ export default function WorkstationAnalysis() {
                     ?.map(e => e.bounding_box)
                     .filter((b): b is NonNullable<typeof b> => b != null)
                   }
+                  overlays={analysis.result?.media?.overlays?.map(ov => ({
+                    ...ov,
+                    url: `${API_BASE}${ov.url}`,
+                  }))}
                   className="flex-1"
                 />
               </HudPanel>
@@ -456,3 +472,7 @@ export default function WorkstationAnalysis() {
     </div>
   );
 }
+
+
+
+

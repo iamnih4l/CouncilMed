@@ -38,3 +38,11 @@ dist-ssr
 venv/
 data/
 *.db
+src-tauri/target/
+src-tauri/gen/
+output/
+temp.txt
+temp_*.py
+test.png
+test_*.py
+testing_data/

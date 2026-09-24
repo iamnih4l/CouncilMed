@@ -262,9 +262,8 @@ def colorize_heatmap(
     Returns:
         (H, W, 3) uint8 colorized image
     """
-    import matplotlib.cm as cm
-    
-    cmap = cm.get_cmap(colormap)
+    import matplotlib
+    cmap = matplotlib.colormaps.get_cmap(colormap) if hasattr(matplotlib.colormaps, 'get_cmap') else matplotlib.colormaps[colormap]
     colored = cmap(heatmap)[:, :, :3]  # Drop alpha
     
     return (colored * 255).astype(np.uint8)
@@ -399,7 +398,9 @@ def _find_last_conv_layer(model: Any) -> str | None:
     last_conv_name = None
     for name, module in model.named_modules():
         if isinstance(module, (nn.Conv2d, nn.Conv3d)):
-            last_conv_name = name
+            # Ignore auxiliary branches that don't flow into the classification head
+            if "attention" not in name and "seg_head" not in name and "aux_classifier" not in name:
+                last_conv_name = name
     
     return last_conv_name
 
@@ -418,3 +419,5 @@ def _get_module_by_name(model: Any, name: str) -> Any | None:
             except (IndexError, ValueError, TypeError):
                 return None
     return module
+
+

@@ -55,7 +55,8 @@ To disable the demo and return to genuine model inference:
 **Backend:**
 ```bash
 # Windows
-set COUNCILMED_DEMO_MODE=false
+$env:COUNCILMED_DEMO_MODE="false"
+python -m backend.run_backend
 # or restart the terminal without the variable
 
 # macOS/Linux

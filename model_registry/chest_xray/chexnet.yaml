@@ -1,0 +1,48 @@
+name: "ChestXRay-CheXNet"
+model_id: "chest_xray_chexnet"
+version: "1.0.0"
+description: "DenseNet model pretrained on CheXpert dataset."
+architecture: "TorchXRayVision_CheXNet"
+architecture_family: "DenseNet"
+framework: "pytorch"
+tasks:
+  - classification
+modality: "XRAY"
+anatomy: "chest"
+num_classes: 18
+class_names:
+  - "Atelectasis"
+  - "Consolidation"
+  - "Infiltration"
+  - "Pneumothorax"
+  - "Edema"
+  - "Emphysema"
+  - "Fibrosis"
+  - "Effusion"
+  - "Pneumonia"
+  - "Pleural_Thickening"
+  - "Cardiomegaly"
+  - "Nodule"
+  - "Mass"
+  - "Hernia"
+  - "Lung Lesion"
+  - "Fracture"
+  - "Lung Opacity"
+  - "Enlarged Cardiomediastinum"
+input_shape: [224, 224, 1]
+input_format: "CHW"
+input_normalization: "xrv"
+weights_path: "model_registry/weights/xray_chexnet.pth"
+weights_checksum: "unknown"
+weights_size_mb: 27.2
+pretrained_on: "CheXpert"
+metrics:
+  dataset: "CheXpert"
+  validated: true
+min_ram_gb: 1.0
+min_vram_gb: 1.0
+supports_cpu: true
+supports_cuda: true
+supports_mps: true
+license: "Apache 2.0"
+source: "torchxrayvision"

@@ -51,7 +51,7 @@ flowchart LR
 
 ## 6. How It Works
 
-1. **Upload**: A medical image is dropped into the React UI with a selected Modality (e.g. Brain MRI).
+1. **Upload**: A medical image is dropped into the React UI with a selected Modality (e.g. Brain MRI, Chest X-Ray, CT Scan).
 2. **Registry Lookup**: The backend loads all PyTorch `.pth` models registered for that specific modality.
 3. **Inference**: The image is passed through the neural networks concurrently.
 4. **Fusion**: The Council Engine evaluates the logits, calculates entropy, and produces a consensus.
@@ -127,7 +127,7 @@ No `.env` file is required for default execution.
 ## 11. Usage
 
 1. Open `http://localhost:5173` in your browser.
-2. Select a modality from the dropdown (e.g., "Brain MRI").
+2. Select a modality from the dropdown (e.g., "Brain MRI", "Chest X-Ray", "CT Scan").
 3. Drop a `.jpg` or `.png` medical scan into the dropzone.
 4. Watch as the Council Members evaluate the image and generate a fused consensus.
 

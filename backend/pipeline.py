@@ -36,8 +36,37 @@ from .dicom.pipeline import (
     DICOMMetadata,
     ParsedImage,
 )
+from .media import generate_preview_png, generate_gradcam_overlay_png
 
 logger = logging.getLogger(__name__)
+
+def normalize_modality(modality: str | None) -> str:
+    if not modality:
+        return "UNKNOWN"
+    m = modality.upper().strip().replace("-", "")
+    if m in ("MRI", "MR"):
+        return "MRI"
+    if m in ("XRAY", "XR", "CR", "DX", "XA", "RF"):
+        return "XRAY"
+    if m in ("CT", "CT SCAN"):
+        return "CT"
+    if m == "US":
+        return "US"
+    if m == "PET":
+        return "PET"
+    return m
+
+def normalize_anatomy(anatomy: str | None) -> str:
+    if not anatomy:
+        return "unknown"
+    a = anatomy.lower().strip()
+    if a in ("brain", "head", "skull"):
+        return "brain"
+    if a in ("chest", "lungs", "thorax"):
+        return "chest"
+    if a in ("abdomen", "abd"):
+        return "abdomen"
+    return a
 
 
 @dataclass
@@ -54,6 +83,14 @@ class AnalysisRequest:
 
 
 @dataclass
+class OverlayInfo:
+    """Information about a single explainability overlay."""
+    model_id: str
+    overlay_type: str  # 'gradcam', 'attention', 'segmentation'
+    png_path: str | None = None  # Filesystem path to the overlay PNG
+
+
+@dataclass
 class AnalysisResponse:
     """Complete response from the analysis pipeline."""
     request_id: str
@@ -67,6 +104,9 @@ class AnalysisResponse:
     hardware: dict[str, Any] = field(default_factory=dict)
     errors: list[str] = field(default_factory=list)
     warnings: list[str] = field(default_factory=list)
+    # Media artifacts
+    preview_path: str | None = None          # Filesystem path to preview PNG
+    overlays: list[OverlayInfo] = field(default_factory=list)
 
 
 class AnalysisPipeline:
@@ -137,16 +177,24 @@ class AnalysisPipeline:
         logger.info("Step 1: Parsing input file")
         metadata, pixel_data = self._parse_input(request.file_path)
         
-        # Step 2: Detect modality and anatomy
-        modality = request.modality_override or detect_modality(metadata)
-        anatomy = request.anatomy_override or detect_anatomy(metadata)
+        # Step 1b: Generate preview PNG from the actual parsed pixel data
+        preview_path: str | None = None
+        try:
+            preview_dir = self.output_dir / "previews" / request.request_id
+            preview_file = preview_dir / "preview.png"
+            generate_preview_png(pixel_data, preview_file)
+            preview_path = str(preview_file)
+            logger.info("Preview generated: %s", preview_path)
+        except Exception as e:
+            logger.error("Preview generation failed: %s", e)
+            warnings.append(f"Preview generation failed: {e}")
         
-        if modality == "UNKNOWN":
-            warnings.append("Could not auto-detect modality. Defaulting to MRI.")
-            modality = "MRI"
-        if anatomy == "unknown":
-            warnings.append("Could not auto-detect anatomy. Defaulting to brain.")
-            anatomy = "brain"
+        # Step 2: Detect modality and anatomy
+        raw_modality = request.modality_override or detect_modality(metadata)
+        raw_anatomy = request.anatomy_override or detect_anatomy(metadata)
+        
+        modality = normalize_modality(raw_modality)
+        anatomy = normalize_anatomy(raw_anatomy)
         
         logger.info("Step 2: Detected modality=%s, anatomy=%s", modality, anatomy)
         
@@ -155,18 +203,23 @@ class AnalysisPipeline:
         council_members = self.registry.get_council_members(modality, anatomy)
         
         if not council_members:
-            # Fallback: try all installed models
-            council_members = [
-                m for m in self.registry.list_all() if m.installed
-            ]
-            if council_members:
-                warnings.append(
-                    f"No models specifically for {modality}/{anatomy}. "
-                    f"Using {len(council_members)} available model(s) as fallback."
-                )
-        
-        if not council_members:
-            errors.append("No models available for analysis")
+            errors.append(f"No compatible models for {modality}/{anatomy}")
+            return AnalysisResponse(
+                request_id=request.request_id,
+                council_result=CouncilResult(
+                    primary_finding="No models available",
+                    requires_human_review=True,
+                    human_review_reasons=[f"No models installed for {modality}/{anatomy}"],
+                ),
+                metadata=metadata,
+                modality=modality,
+                anatomy=anatomy,
+                image_shape=pixel_data.shape,
+                total_time_ms=(time.perf_counter() - start_time) * 1000,
+                errors=errors,
+                warnings=warnings,
+                preview_path=preview_path,
+            )
             return AnalysisResponse(
                 request_id=request.request_id,
                 council_result=CouncilResult(
@@ -181,6 +234,7 @@ class AnalysisPipeline:
                 total_time_ms=(time.perf_counter() - start_time) * 1000,
                 errors=errors,
                 warnings=warnings,
+                preview_path=preview_path,
             )
         
         logger.info(
@@ -237,9 +291,10 @@ class AnalysisPipeline:
         )
         
         # Step 6: Explainability (if enabled and PyTorch models available)
+        overlays: list[OverlayInfo] = []
         if request.enable_explainability:
             logger.info("Step 6: Generating explainability artifacts")
-            self._generate_explainability(
+            overlays = self._generate_explainability(
                 council_result, pixel_data, request.request_id
             )
         
@@ -272,6 +327,8 @@ class AnalysisPipeline:
             hardware=get_hardware_info(),
             errors=errors,
             warnings=warnings,
+            preview_path=preview_path,
+            overlays=overlays,
         )
     
     def _parse_input(
@@ -341,15 +398,24 @@ class AnalysisPipeline:
         council_result: CouncilResult,
         pixel_data: np.ndarray,
         request_id: str,
-    ) -> None:
-        """Generate explainability for PyTorch models in the council."""
+    ) -> list[OverlayInfo]:
+        """Generate explainability for PyTorch models in the council.
+        
+        Returns a list of OverlayInfo with paths to generated PNG overlays.
+        """
+        overlays: list[OverlayInfo] = []
+        
         # Explainability requires PyTorch models with gradient access
         # For Keras/ONNX models, we skip (would need separate implementation)
         try:
             from .explainability.gradcam import generate_explainability
         except ImportError:
             logger.warning("Explainability module not available")
-            return
+            return overlays
+        
+        # Determine the preview target size for overlay alignment
+        preview_h, preview_w = pixel_data.shape[0], pixel_data.shape[1] if pixel_data.ndim >= 2 else 1
+        target_size = (preview_h, preview_w)
         
         for evidence in council_result.member_evidence:
             if evidence.status != ModelStatus.SUCCESS:
@@ -368,7 +434,7 @@ class AnalysisPipeline:
                 continue
             
             try:
-                from .inference.engine import load_pytorch_model
+                from .inference.engine import load_pytorch_model, preprocess_image
                 model = load_pytorch_model(manifest)
                 
                 # Get the target class index
@@ -378,22 +444,58 @@ class AnalysisPipeline:
                     if name == evidence.prediction:
                         target_class = i
                         break
+                        
+                # Ensure we use the exact same preprocessing as inference
+                preprocessed_image = preprocess_image(
+                    pixel_data,
+                    target_size=(manifest.input_shape[0], manifest.input_shape[1]),
+                    normalization=manifest.input_normalization,
+                    output_format=manifest.input_format,
+                )
                 
                 output_dir = self.output_dir / "explainability" / request_id
                 explainability = generate_explainability(
                     model=model,
-                    input_image=pixel_data,
+                    input_image=preprocessed_image,
                     target_class=target_class,
                     output_dir=output_dir,
                     model_id=evidence.model_id,
                 )
                 evidence.explainability = explainability
                 
+                # Convert the .npy heatmap to a browser-displayable PNG overlay
+                if explainability.gradcam_path:
+                    npy_path = Path(explainability.gradcam_path)
+                    png_path = npy_path.with_suffix(".png")
+                    try:
+                        generate_gradcam_overlay_png(
+                            gradcam_npy_path=npy_path,
+                            output_path=png_path,
+                            target_size=target_size,
+                        )
+                        overlay_info = OverlayInfo(
+                            model_id=evidence.model_id,
+                            overlay_type="gradcam",
+                            png_path=str(png_path),
+                        )
+                        overlays.append(overlay_info)
+                        logger.info(
+                            "Overlay PNG created for %s: %s",
+                            evidence.model_id, png_path
+                        )
+                    except Exception as e:
+                        logger.error(
+                            "Failed to generate overlay PNG for %s: %s",
+                            evidence.model_id, e
+                        )
+                
             except Exception as e:
                 logger.error(
                     "Explainability failed for %s: %s",
-                    evidence.model_id, e
+                    evidence.model_id, e, exc_info=True
                 )
+        
+        return overlays
     
     def _run_agent(self, council_result: CouncilResult) -> AgentInsight | None:
         """Run the agentic AI layer over the council result."""

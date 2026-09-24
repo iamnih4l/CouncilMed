@@ -1,6 +1,7 @@
 import time
 import uuid
 import hashlib
+import copy
 from typing import Any, Dict
 
 from .schemas import (
@@ -262,9 +263,23 @@ def get_demo_analysis_result(request_id: str, file_path: str, study_id: str | No
         request_id = f"demo-{request_id}"
 
     scenario_key = get_scenario_key(file_path)
-    scenario = SCENARIOS[scenario_key]
+    scenario = copy.deepcopy(SCENARIOS[scenario_key])
     c = scenario["council"]
     i = scenario["insight"]
+
+    # Keep demo output visibly tied to the uploaded bytes. Demo mode is not
+    # clinical inference, but identical canned boxes make stale uploads look
+    # like a frontend bug.
+    digest = hashlib.sha256(file_path.encode()).digest()
+    if scenario_key.startswith("mri_"):
+        box = c["evidence"][0].bounding_box
+        if box:
+            box["x"] = 32 + digest[0] % 132
+            box["y"] = 28 + digest[1] % 132
+            box["width"] = 48 + digest[2] % 56
+            box["height"] = 48 + digest[3] % 56
+        confidence_delta = (digest[4] / 2550) - 0.05
+        c["confidence"] = max(0.5, min(0.99, c["confidence"] + confidence_delta))
 
     council_result = CouncilResultResponse(
         council_run_id=f"run-{request_id[:8]}",

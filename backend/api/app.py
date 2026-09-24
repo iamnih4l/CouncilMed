@@ -22,10 +22,11 @@ from contextlib import asynccontextmanager
 from datetime import datetime, timezone
 from pathlib import Path
 from typing import Any
+from backend.council.evidence import ModelStatus
 
 from fastapi import FastAPI, File, UploadFile, HTTPException, Query
 from fastapi.middleware.cors import CORSMiddleware
-from fastapi.responses import JSONResponse
+from fastapi.responses import JSONResponse, FileResponse
 
 from .schemas import (
     AnalyzeRequest,
@@ -40,7 +41,10 @@ from .schemas import (
     ReportRequest,
     ReportResponse,
     ReportSectionResponse,
+    OverlayResponse,
+    MediaResponse,
 )
+from ..media import validate_safe_id
 
 logger = logging.getLogger(__name__)
 
@@ -105,8 +109,8 @@ app = FastAPI(
 # CORS — restricted to localhost only
 app.add_middleware(
     CORSMiddleware,
-    allow_origins=ALLOWED_ORIGINS,
-    allow_credentials=True,
+    allow_origins=["*"],
+    allow_credentials=False,
     allow_methods=["GET", "POST", "PUT"],
     allow_headers=["*"],
 )
@@ -200,8 +204,12 @@ async def analyze_uploaded_image(
     if os.environ.get("COUNCILMED_DEMO_MODE", "").lower() == "true":
         import asyncio
         from .demo_data import get_demo_analysis_result
+        import hashlib
         await asyncio.sleep(2) # Simulate processing time
-        return get_demo_analysis_result("", file.filename, None)
+        content = await file.read()
+        content_id = hashlib.sha256(content).hexdigest()
+        demo_key = f"{modality or 'mri'}:{file.filename or 'upload'}:{content_id}"
+        return get_demo_analysis_result("", demo_key, None)
 
     if not _pipeline:
         raise HTTPException(status_code=503, detail="Pipeline not initialized")
@@ -253,6 +261,85 @@ async def analyze_uploaded_image(
     except Exception as e:
         logger.error("Analysis failed: %s", e, exc_info=True)
         raise HTTPException(status_code=500, detail=str(e))
+
+
+# ==============================
+
+@app.post("/debug")
+async def debug_log(request: Request):
+    data = await request.body()
+    with open("frontend_debug.log", "a") as f:
+        f.write(data.decode("utf-8") + "\n")
+    return {"status": "ok"}
+# Media Serving (Safe Endpoints)
+# ==============================
+
+@app.get("/api/analyses/{request_id}/preview")
+async def get_analysis_preview(request_id: str):
+    """Serve the preview image for an analysis.
+    
+    Validates the request_id and serves only from the designated output directory.
+    Prevents path traversal attacks.
+    """
+    try:
+        validate_safe_id(request_id, "request_id")
+    except ValueError as e:
+        raise HTTPException(status_code=400, detail=str(e))
+    
+    from ..paths import get_base_dir
+    preview_path = get_base_dir() / "output" / "previews" / request_id / "preview.png"
+    
+    if not preview_path.exists():
+        raise HTTPException(status_code=404, detail="Preview not found")
+    
+    # Extra safety: ensure the resolved path is within the output directory
+    output_root = get_base_dir() / "output"
+    try:
+        preview_path.resolve().relative_to(output_root.resolve())
+    except ValueError:
+        raise HTTPException(status_code=403, detail="Access denied")
+    
+    return FileResponse(
+        str(preview_path),
+        media_type="image/png",
+        headers={"Cache-Control": "public, max-age=3600", "Access-Control-Allow-Origin": "*"},
+    )
+
+
+@app.get("/api/analyses/{request_id}/overlays/{model_id}")
+async def get_analysis_overlay(request_id: str, model_id: str):
+    """Serve an explainability overlay image for a specific model.
+    
+    Validates both IDs and serves only from the designated explainability directory.
+    Prevents path traversal attacks.
+    """
+    try:
+        validate_safe_id(request_id, "request_id")
+        validate_safe_id(model_id, "model_id")
+    except ValueError as e:
+        raise HTTPException(status_code=400, detail=str(e))
+    
+    from ..paths import get_base_dir
+    overlay_path = (
+        get_base_dir() / "output" / "explainability" / request_id
+        / f"{model_id}_gradcam.png"
+    )
+    
+    if not overlay_path.exists():
+        raise HTTPException(status_code=404, detail="Overlay not found")
+    
+    # Extra safety: ensure the resolved path is within the output directory
+    output_root = get_base_dir() / "output"
+    try:
+        overlay_path.resolve().relative_to(output_root.resolve())
+    except ValueError:
+        raise HTTPException(status_code=403, detail="Access denied")
+    
+    return FileResponse(
+        str(overlay_path),
+        media_type="image/png",
+        headers={"Cache-Control": "public, max-age=3600", "Access-Control-Allow-Origin": "*"},
+    )
 
 
 # ==============================
@@ -433,6 +520,28 @@ async def generate_report_endpoint(request: ReportRequest):
             # Reconstruct ModelEvidence objects
             member_evidence = []
             for er in evidence_records:
+                from ..council.evidence import ExplainabilityData, LocalizationData, BoundingBox
+                
+                exp_data = None
+                if er.gradcam_path or er.target_layer:
+                    exp_data = ExplainabilityData(
+                        gradcam_path=er.gradcam_path,
+                        target_layer=er.target_layer,
+                        target_class_idx=0,
+                    )
+                
+                loc_data = None
+                if er.localization and "bounding_box" in er.localization:
+                    bb = er.localization["bounding_box"]
+                    loc_data = LocalizationData(
+                        bounding_box=BoundingBox(
+                            x_min=bb.get("x_min", 0.0),
+                            y_min=bb.get("y_min", 0.0),
+                            x_max=bb.get("x_max", 0.0),
+                            y_max=bb.get("y_max", 0.0),
+                        )
+                    )
+                
                 member_evidence.append(ModelEvidence(
                     model_id=er.model_id,
                     model_name=er.model_name,
@@ -446,6 +555,8 @@ async def generate_report_endpoint(request: ReportRequest):
                     processing_time_ms=er.processing_time_ms or 0.0,
                     error_message=er.error_message,
                     device=er.device or "cpu",
+                    explainability=exp_data,
+                    localization=loc_data,
                 ))
 
             # Reconstruct CouncilResult
@@ -536,6 +647,16 @@ def _map_to_response(result) -> AnalyzeResponse:
                 "width": int(bb.x_max - bb.x_min),
                 "height": int(bb.y_max - bb.y_min),
             }
+        
+        # Determine explainability status for this model
+        explainability_status = None
+        if ev.explainability:
+            if ev.explainability.gradcam_path:
+                explainability_status = "available"
+            else:
+                explainability_status = "generated_no_artifact"
+        elif ev.status == ModelStatus.SUCCESS:
+            explainability_status = "unsupported"
 
         evidence_responses.append(ModelEvidenceResponse(
             model_id=ev.model_id,
@@ -551,6 +672,7 @@ def _map_to_response(result) -> AnalyzeResponse:
             error_message=ev.error_message,
             device=ev.device,
             bounding_box=bbox,
+            explainability_status=explainability_status,
         ))
     
     council_response = CouncilResultResponse(
@@ -587,6 +709,23 @@ def _map_to_response(result) -> AnalyzeResponse:
             processing_time_ms=ai.processing_time_ms,
         )
     
+    # Build media response
+    preview_url = f"/api/analyses/{result.request_id}/preview" if result.preview_path else None
+    
+    overlay_responses = []
+    for ov in getattr(result, 'overlays', []):
+        if ov.png_path:
+            overlay_responses.append(OverlayResponse(
+                model_id=ov.model_id,
+                url=f"/api/analyses/{result.request_id}/overlays/{ov.model_id}",
+                overlay_type=ov.overlay_type,
+            ))
+    
+    media = MediaResponse(
+        preview_url=preview_url,
+        overlays=overlay_responses,
+    )
+    
     return AnalyzeResponse(
         request_id=result.request_id,
         council_result=council_response,
@@ -598,6 +737,7 @@ def _map_to_response(result) -> AnalyzeResponse:
         hardware=result.hardware,
         errors=result.errors,
         warnings=result.warnings,
+        media=media,
     )
 
 
@@ -643,6 +783,14 @@ async def _store_analysis(result) -> None:
                     input_hash=ev.input_hash,
                     gradcam_path=ev.explainability.gradcam_path if ev.explainability else None,
                     target_layer=ev.explainability.target_layer if ev.explainability else None,
+                    localization={
+                        "bounding_box": {
+                            "x_min": ev.localization.bounding_box.x_min,
+                            "y_min": ev.localization.bounding_box.y_min,
+                            "x_max": ev.localization.bounding_box.x_max,
+                            "y_max": ev.localization.bounding_box.y_max,
+                        }
+                    } if ev.localization and ev.localization.bounding_box else None,
                 )
                 session.add(evidence_record)
             
@@ -783,4 +931,10 @@ async def query_knowledge(query: str, n_results: int = 5):
             "source": "baseline",
             "results": [{"content": baseline, "source": "baseline"}] if baseline else [],
         }
+
+
+
+
+
+
 

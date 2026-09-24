@@ -20,6 +20,7 @@ export interface ModelEvidenceResponse {
   status: 'success' | 'error' | 'unavailable' | 'timeout';
   error_message: string | null;
   bounding_box?: { x: number; y: number; width: number; height: number } | null;
+  explainability_status?: 'available' | 'unsupported' | 'generated_no_artifact' | null;
 }
 
 export interface CouncilResultResponse {
@@ -59,6 +60,17 @@ export interface AgentInsightResponse {
   processing_time_ms: number;
 }
 
+export interface OverlayResponse {
+  model_id: string;
+  url: string;
+  overlay_type: 'gradcam' | 'attention' | 'segmentation';
+}
+
+export interface MediaResponse {
+  preview_url: string | null;
+  overlays: OverlayResponse[];
+}
+
 export interface AnalyzeResponse {
   request_id: string;
   council_result: CouncilResultResponse;
@@ -70,6 +82,7 @@ export interface AnalyzeResponse {
   hardware: Record<string, unknown>;
   errors: string[];
   warnings: string[];
+  media: MediaResponse;
 }
 
 export interface ModelInfo {

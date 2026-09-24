@@ -12,6 +12,7 @@ import {
   ChevronRight, Shield, Brain, Clock, Copy, Check,
   AlertTriangle, Info,
 } from 'lucide-react';
+import { useNavigate } from 'react-router-dom';
 import { GlassCard } from '../components/ui/GlassCard';
 import { api } from '../services/api';
 import type { AnalysisHistoryItem, ReportResponse, ReportSectionResponse } from '../services/api';
@@ -252,6 +253,7 @@ function ReportViewer({ report }: { report: ReportResponse }) {
 }
 
 export default function ReportsPage() {
+  const navigate = useNavigate();
   const [analyses, setAnalyses] = useState<AnalysisHistoryItem[]>([]);
   const [selectedAnalysis, setSelectedAnalysis] = useState<string | null>(null);
   const [report, setReport] = useState<ReportResponse | null>(null);
@@ -296,11 +298,16 @@ export default function ReportsPage() {
       initial={{ opacity: 0 }}
       animate={{ opacity: 1 }}
     >
-      <div>
+      <div className="flex items-start justify-between">
+        <div>
         <h1 className="text-2xl font-bold tracking-tight bg-clip-text text-transparent bg-gradient-to-r from-white to-zinc-400">
           Clinical Reports
         </h1>
         <p className="text-zinc-500 text-sm mt-0.5">Generate structured reports from council evidence</p>
+      </div>
+        <button onClick={() => navigate('/')} className="flex items-center gap-2 px-4 py-2 border border-cyan-500/30 rounded-lg text-xs font-mono tracking-widest bg-black/40 text-cyan-400 hover:bg-cyan-500/20 hover:text-white transition-all shadow-[0_0_15px_rgba(0,240,255,0.1)] hover:shadow-[0_0_25px_rgba(0,240,255,0.25)]">
+          &larr; BACK TO WORKSTATION
+        </button>
       </div>
 
       {error && (

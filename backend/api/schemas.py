@@ -39,6 +39,7 @@ class ModelEvidenceResponse(BaseModel):
     error_message: str | None = None
     device: str = "cpu"
     bounding_box: dict[str, int] | None = None
+    explainability_status: str | None = None  # 'available', 'unsupported', 'generated_no_artifact'
 
 
 class CouncilResultResponse(BaseModel):
@@ -74,6 +75,19 @@ class AgentInsightResponse(BaseModel):
     processing_time_ms: float = 0.0
 
 
+class OverlayResponse(BaseModel):
+    """A single explainability overlay reference."""
+    model_id: str
+    url: str
+    overlay_type: str  # 'gradcam', 'attention', 'segmentation'
+
+
+class MediaResponse(BaseModel):
+    """Media artifacts associated with an analysis."""
+    preview_url: str | None = None
+    overlays: list[OverlayResponse] = []
+
+
 class AnalyzeResponse(BaseModel):
     """Complete analysis response."""
     request_id: str
@@ -86,6 +100,7 @@ class AnalyzeResponse(BaseModel):
     hardware: dict[str, Any] = {}
     errors: list[str] = []
     warnings: list[str] = []
+    media: MediaResponse = MediaResponse()
 
 
 # ==============================

@@ -1,0 +1,42 @@
+# =====================================================
+# CouncilMed - Model Manifest: CT Lung Nodule
+# =====================================================
+name: "CT-Lung-Nodule-Detector"
+model_id: "ct_lung_nodule"
+version: "1.0.0"
+description: "MONAI RetinaNet model pretrained on LUNA16 for lung nodule detection."
+
+architecture: "MonaiLungNoduleDetector"
+architecture_family: "RetinaNet"
+framework: "pytorch"
+
+tasks:
+  - classification
+modality: "CT"
+anatomy: "chest"
+
+num_classes: 2
+class_names:
+  - "Normal"
+  - "Nodule"
+
+input_shape: [224, 224, 1]
+input_format: "CHW"
+input_normalization: "medical"
+
+weights_path: "model_registry/weights/ct_lung_nodule.pth"
+weights_size_mb: 80.0
+pretrained_on: "LUNA16"
+
+metrics:
+  dataset: "LUNA16"
+  validated: true
+
+min_ram_gb: 2.0
+min_vram_gb: 2.0
+supports_cpu: true
+supports_cuda: true
+supports_mps: true
+
+license: "Apache 2.0"
+source: "monai.bundle"

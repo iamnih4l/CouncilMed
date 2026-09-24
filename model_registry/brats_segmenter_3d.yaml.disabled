@@ -1,0 +1,38 @@
+name: "BraTS-SwinUNETR-v1"
+model_id: "brats_swin_unetr_v1"
+version: "1.0.0"
+description: "Production-ready Swin-UNETR model trained on the BraTS dataset for 3D brain tumor segmentation."
+architecture: "Swin-UNETR"
+architecture_family: "Swin-UNETR"
+framework: "monai"
+
+tasks:
+  - segmentation
+  - localization
+modality: "MRI"
+anatomy: "brain"
+
+num_classes: 4
+class_names:
+  - "Background"
+  - "Necrotic/Non-Enhancing Core (NCR/NET)"
+  - "Edema (ED)"
+  - "Enhancing Tumor (ET)"
+
+input_shape: [240, 240, 155, 4]
+input_format: "NCDHW"
+input_normalization: "z-score"
+
+weights_path: "model_registry/weights/brats_mri_segmentation/models/model.pt"
+weights_size_mb: 400.0
+pretrained_on: "BraTS 2021"
+
+metrics:
+  dataset: "BraTS 2021 Validation"
+  validated: true
+
+min_ram_gb: 4.0
+min_vram_gb: 4.0
+supports_cpu: true
+supports_cuda: true
+supports_mps: true

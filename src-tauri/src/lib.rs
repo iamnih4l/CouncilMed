@@ -6,9 +6,9 @@
 #![cfg_attr(not(debug_assertions), windows_subsystem = "windows")]
 
 use serde::{Deserialize, Serialize};
-use std::process::Command;
+
 use std::sync::Mutex;
-use tauri::State;
+use tauri::{Manager, State};
 
 use tauri_plugin_shell::ShellExt;
 use tauri_plugin_shell::process::{CommandChild, CommandEvent};
@@ -126,7 +126,8 @@ pub fn run() {
                 .spawn()
                 .map_err(|e| e.to_string())?;
 
-            let mut process_guard = app.state::<AppState>().backend_process.lock().unwrap();
+            let binding = app.state::<AppState>();
+            let mut process_guard = binding.backend_process.lock().unwrap();
             *process_guard = Some(child);
 
             tauri::async_runtime::spawn(async move {

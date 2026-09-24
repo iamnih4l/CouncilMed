@@ -32,9 +32,16 @@ interface ViewerState {
   activeTool: 'pan' | 'window' | 'zoom' | 'measure';
 }
 
+interface OverlayItem {
+  model_id: string;
+  url: string;
+  overlay_type: string;
+}
+
 interface MedicalImageViewerProps {
   imageUrl: string | null;
   overlayUrl?: string | null;
+  overlays?: OverlayItem[];
   fileName?: string;
   imageShape?: number[];
   metadata?: Record<string, string>;
@@ -47,6 +54,7 @@ interface MedicalImageViewerProps {
 export function MedicalImageViewer({
   imageUrl,
   overlayUrl,
+  overlays = [],
   fileName = '',
   imageShape,
   metadata,
@@ -57,11 +65,13 @@ export function MedicalImageViewer({
 }: MedicalImageViewerProps) {
   const canvasRef = useRef<HTMLCanvasElement>(null);
   const containerRef = useRef<HTMLDivElement>(null);
-  const [isDragging, setIsDragging] = useState(false);
-  const [lastPos, setLastPos] = useState({ x: 0, y: 0 });
+  const isDraggingRef = useRef(false);
+  const lastPosRef = useRef({ x: 0, y: 0 });
   const [showMetadata, setShowMetadata] = useState(false);
   const [cursorPos, setCursorPos] = useState({ x: 0, y: 0 });
   const [pixelValue, setPixelValue] = useState<number | null>(null);
+  const [measurements, setMeasurements] = useState<{start: {x: number, y: number}, end: {x: number, y: number}}[]>([]);
+  const [currentMeasurement, setCurrentMeasurement] = useState<{start: {x: number, y: number}, end: {x: number, y: number}} | null>(null);
 
   const [state, setState] = useState<ViewerState>({
     zoom: 1,
@@ -78,10 +88,16 @@ export function MedicalImageViewer({
   const imageRef = useRef<HTMLImageElement | null>(null);
   const overlayRef = useRef<HTMLImageElement | null>(null);
   const [imageLoaded, setImageLoaded] = useState(false);
+  const [overlayLoaded, setOverlayLoaded] = useState(false);
+  const [selectedOverlayIdx, setSelectedOverlayIdx] = useState(0);
   const glowPhaseRef = useRef(0);
   const animationRef = useRef<number | null>(null);
 
-  const coordSpace = Math.max(imageShape?.[0] ?? 512, imageShape?.[1] ?? 512, 512);
+  // Determine the active overlay URL — prefer the overlays array, fall back to overlayUrl
+  const activeOverlayUrl = overlays.length > 0
+    ? overlays[selectedOverlayIdx]?.url ?? null
+    : overlayUrl ?? null;
+  const hasOverlays = activeOverlayUrl !== null || overlays.length > 0;
 
   // Load images when URLs change
   useEffect(() => {
@@ -93,20 +109,20 @@ export function MedicalImageViewer({
 
     setImageLoaded(false);
     const img = new Image();
-    if (!imageUrl.startsWith('data:') && !imageUrl.startsWith('blob:')) {
-      img.crossOrigin = 'anonymous';
-    }
-    img.onload = () => {
-      console.log('Image successfully loaded!', { width: img.width, height: img.height, src: img.src.substring(0, 50) + '...' });
+    
+    img.onload = () => { console.log('Image successfully loaded!', { width: img.width, height: img.height, src: img.src.substring(0, 50) + '...' });
       imageRef.current = img;
       setImageLoaded(true);
     };
-    img.onerror = (e) => {
-      console.error('Image failed to load!', e, { src: imageUrl.substring(0, 50) + '...' });
+    img.onerror = (e) => { console.error('Image failed to load!', e, { src: imageUrl.substring(0, 50) + '...' });
       imageRef.current = null;
       setImageLoaded(false);
     };
-    img.src = imageUrl;
+        const urlObj = new URL(imageUrl, window.location.origin);
+    urlObj.searchParams.set('cb', Date.now().toString());
+    const finalUrl = imageUrl.startsWith('data:') || imageUrl.startsWith('blob:') ? imageUrl : urlObj.toString();
+    img.crossOrigin = 'anonymous';
+    img.src = finalUrl;
 
     return () => {
       img.onload = null;
@@ -114,24 +130,36 @@ export function MedicalImageViewer({
     };
   }, [imageUrl]);
 
+  // Load overlay image
   useEffect(() => {
-    if (!overlayUrl) {
+    if (!activeOverlayUrl) {
       overlayRef.current = null;
+      setOverlayLoaded(false);
       return;
     }
 
+    setOverlayLoaded(false);
     const img = new Image();
-    img.crossOrigin = 'anonymous';
-    img.onload = () => {
-      overlayRef.current = img;
-      setImageLoaded(prev => prev);
+    
+    img.onload = () => { overlayRef.current = img;
+      setOverlayLoaded(true);
     };
-    img.src = overlayUrl;
+    img.onerror = () => {
+      console.error('Overlay failed to load:', activeOverlayUrl.substring(0, 50) + '...');
+      overlayRef.current = null;
+      setOverlayLoaded(false);
+    };
+        const overlayUrlObj = new URL(activeOverlayUrl, window.location.origin);
+    overlayUrlObj.searchParams.set('cb', Date.now().toString());
+    const finalOverlayUrl = activeOverlayUrl.startsWith('data:') || activeOverlayUrl.startsWith('blob:') ? activeOverlayUrl : overlayUrlObj.toString();
+    img.crossOrigin = 'anonymous';
+    img.src = finalOverlayUrl;
 
     return () => {
       img.onload = null;
+      img.onerror = null;
     };
-  }, [overlayUrl]);
+  }, [activeOverlayUrl]);
 
   // Render the canvas
   const renderCanvas = useCallback(() => {
@@ -146,10 +174,7 @@ export function MedicalImageViewer({
     const dpr = window.devicePixelRatio || 1;
     const rect = container.getBoundingClientRect();
 
-    const viewW = rect.width;
-    const viewH = rect.height;
-
-    canvas.width = viewW * dpr;
+    const viewW = rect.width; const viewH = rect.height; canvas.width = viewW * dpr;
     canvas.height = viewH * dpr;
 
     ctx.setTransform(dpr, 0, 0, dpr, 0, 0);
@@ -233,12 +258,7 @@ export function MedicalImageViewer({
 
     // Simulate Window/Level with contrast/brightness filters
     // Default width=400, center=200
-    const contrastVal = state.windowWidth === 0 ? 1 : 400 / state.windowWidth;
-    const brightnessVal = 1 + ((200 - state.windowCenter) / 200);
-    const contrastStr = `contrast(${Math.max(0, contrastVal)})`;
-    const brightnessStr = `brightness(${Math.max(0, brightnessVal)})`;
-    const invertStr = state.invert ? 'invert(1) ' : '';
-    ctx.filter = `${invertStr}${contrastStr} ${brightnessStr}`;
+    ctx.filter = `contrast(${Math.max(0, 400 / Math.max(1, state.windowWidth))}) brightness(${Math.max(0, 1 + (state.windowCenter - 200) / 200)})`;
     
     const img = imageRef.current;
     if (img && img.width > 0 && imageLoaded) {
@@ -251,24 +271,30 @@ export function MedicalImageViewer({
       // Draw actual medical image
       ctx.drawImage(img, -imgW/2, -imgH/2, imgW, imgH);
 
-      // Draw Grad-CAM overlay when available
+      // Draw Grad-CAM overlay when available and loaded
       const overlay = overlayRef.current;
-      if (overlay && overlay.width > 0 && state.showOverlay) {
-        ctx.globalAlpha = 0.45;
+      if (overlay && overlay.width > 0 && overlayLoaded && state.showOverlay) {
+        ctx.filter = 'none'; // Don't apply W/L to overlay — it has its own RGBA
+        ctx.globalAlpha = 0.5;
         ctx.drawImage(overlay, -imgW/2, -imgH/2, imgW, imgH);
         ctx.globalAlpha = 1;
       }
       
       // Draw glowing bounding boxes from council evidence
+      // Boxes come in image-pixel coordinates (relative to the original image dims).
+      // Map them to canvas space using the actual natural image dimensions.
       if (boxes && boxes.length > 0) {
         ctx.filter = 'none';
         const glowIntensity = 0.55 + 0.45 * Math.sin(glowPhaseRef.current);
+        // Use actual image natural dimensions for coordinate mapping
+        const imgNatW = img.naturalWidth || img.width;
+        const imgNatH = img.naturalHeight || img.height;
 
         boxes.forEach(box => {
-          const mappedX = -imgW/2 + (box.x / coordSpace) * imgW;
-          const mappedY = -imgH/2 + (box.y / coordSpace) * imgH;
-          const mappedW = (box.width / coordSpace) * imgW;
-          const mappedH = (box.height / coordSpace) * imgH;
+          const mappedX = -imgW/2 + (box.x / imgNatW) * imgW;
+          const mappedY = -imgH/2 + (box.y / imgNatH) * imgH;
+          const mappedW = (box.width / imgNatW) * imgW;
+          const mappedH = (box.height / imgNatH) * imgH;
 
           ctx.save();
           ctx.shadowColor = `rgba(0, 240, 255, ${0.35 + glowIntensity * 0.45})`;
@@ -297,12 +323,56 @@ export function MedicalImageViewer({
       ctx.fill();
     }
     
+    // Draw manual measurements
+    ctx.strokeStyle = '#00f0ff';
+    ctx.fillStyle = '#00f0ff';
+    ctx.lineWidth = 2 / state.zoom;
+    
+    const drawMeasurement = (m: {start: {x: number, y: number}, end: {x: number, y: number}}) => {
+      ctx.beginPath();
+      ctx.moveTo(m.start.x, m.start.y);
+      ctx.lineTo(m.end.x, m.end.y);
+      ctx.stroke();
+      
+      // Draw endpoints
+      ctx.beginPath();
+      ctx.arc(m.start.x, m.start.y, 3 / state.zoom, 0, Math.PI * 2);
+      ctx.fill();
+      ctx.beginPath();
+      ctx.arc(m.end.x, m.end.y, 3 / state.zoom, 0, Math.PI * 2);
+      ctx.fill();
+      
+      // Calculate physical distance (placeholder conversion, e.g., 1 pixel = 0.5mm)
+      const distPixels = Math.hypot(m.end.x - m.start.x, m.end.y - m.start.y);
+      const distMm = (distPixels * 0.5).toFixed(1); // placeholder physical distance
+      
+      // Draw text
+      ctx.save();
+      ctx.translate((m.start.x + m.end.x) / 2, (m.start.y + m.end.y) / 2);
+      // Keep text upright relative to the screen (undo rotation)
+      ctx.rotate((-state.rotation * Math.PI) / 180);
+      ctx.scale(1 / state.zoom, 1 / state.zoom);
+      
+      ctx.fillStyle = 'rgba(0,0,0,0.7)';
+      ctx.fillRect(-20, -15, 40, 20);
+      ctx.fillStyle = '#00f0ff';
+      ctx.font = '12px monospace';
+      ctx.textAlign = 'center';
+      ctx.fillText(`${distMm}mm`, 0, -2);
+      ctx.restore();
+    };
+
+    measurements.forEach(drawMeasurement);
+    if (currentMeasurement) {
+      drawMeasurement(currentMeasurement);
+    }
+
     ctx.filter = 'none';
     ctx.restore();
 
     // Draw viewer annotations
     _drawAnnotations(ctx, viewW, viewH);
-  }, [state, imageUrl, imageLoaded, fileName, imageShape, pixelValue, cursorPos, boxes, modality, anatomy, coordSpace]);
+  }, [state, imageUrl, imageLoaded, overlayLoaded, fileName, imageShape, pixelValue, cursorPos, boxes, modality, anatomy, measurements, currentMeasurement]);
 
   // Re-render when state changes
   useEffect(() => {
@@ -349,37 +419,44 @@ export function MedicalImageViewer({
 
   // Mouse handlers
   const handleMouseDown = useCallback((e: React.MouseEvent) => {
-    setIsDragging(true);
-    setLastPos({ x: e.clientX, y: e.clientY });
-  }, []);
+    isDraggingRef.current = true;
+    lastPosRef.current = { x: e.clientX, y: e.clientY };
+
+    if (state.activeTool === 'measure') {
+      const rect = containerRef.current!.getBoundingClientRect();
+      const x = e.clientX - rect.left;
+      const y = e.clientY - rect.top;
+      const viewW = rect.width;
+      const viewH = rect.height;
+      const canvasX = (x - viewW/2 - state.panX) / state.zoom;
+      const canvasY = (y - viewH/2 - state.panY) / state.zoom;
+      setCurrentMeasurement({ start: { x: canvasX, y: canvasY }, end: { x: canvasX, y: canvasY } });
+    }
+  }, [state.activeTool, state.panX, state.panY, state.zoom]);
 
   const handleMouseMove = useCallback((e: React.MouseEvent) => {
     const canvas = canvasRef.current;
-    if (!canvas) return;
+    const container = containerRef.current;
+    if (!canvas || !container) return;
 
-    const rect = canvas.getBoundingClientRect();
+    const rect = container.getBoundingClientRect();
     const x = Math.round(e.clientX - rect.left);
     const y = Math.round(e.clientY - rect.top);
     setCursorPos({ x, y });
 
-    // Get pixel value under cursor only when not dragging to avoid lag
-    if (!isDragging) {
-      const ctx = canvas.getContext('2d');
-      if (ctx) {
-        try {
-          const pixel = ctx.getImageData(x, y, 1, 1).data;
-          setPixelValue(pixel[0]); // Grayscale value
-        } catch (e) {
-          // Ignore CORS canvas taint errors
-        }
-      }
+    if (state.activeTool === 'measure' && isDraggingRef.current && currentMeasurement) {
+      const viewW = rect.width;
+      const viewH = rect.height;
+      const canvasX = (x - viewW/2 - state.panX) / state.zoom;
+      const canvasY = (y - viewH/2 - state.panY) / state.zoom;
+      setCurrentMeasurement(prev => prev ? { ...prev, end: { x: canvasX, y: canvasY } } : null);
     }
 
-    if (!isDragging) return;
+    if (!isDraggingRef.current) return;
 
-    const dx = e.clientX - lastPos.x;
-    const dy = e.clientY - lastPos.y;
-    setLastPos({ x: e.clientX, y: e.clientY });
+    const dx = e.clientX - lastPosRef.current.x;
+    const dy = e.clientY - lastPosRef.current.y;
+    lastPosRef.current = { x: e.clientX, y: e.clientY };
 
     if (state.activeTool === 'pan') {
       setState(prev => ({
@@ -399,11 +476,17 @@ export function MedicalImageViewer({
         zoom: Math.max(0.1, Math.min(10, prev.zoom + dy * -0.005)),
       }));
     }
-  }, [isDragging, lastPos, state.activeTool]);
+  }, [state.activeTool]);
 
   const handleMouseUp = useCallback(() => {
-    setIsDragging(false);
-  }, []);
+    isDraggingRef.current = false;
+    if (state.activeTool === 'measure' && currentMeasurement) {
+      if (Math.hypot(currentMeasurement.end.x - currentMeasurement.start.x, currentMeasurement.end.y - currentMeasurement.start.y) > 5) {
+        setMeasurements(prev => [...prev, currentMeasurement]);
+      }
+      setCurrentMeasurement(null);
+    }
+  }, [state.activeTool, currentMeasurement]);
 
   const handleWheel = useCallback((e: React.WheelEvent) => {
     e.preventDefault();
@@ -422,6 +505,7 @@ export function MedicalImageViewer({
       rotation: 0,
       invert: false,
     }));
+    setMeasurements([]);
   }, []);
 
   const toolButtons = [
@@ -488,17 +572,33 @@ export function MedicalImageViewer({
             <Contrast className="w-3.5 h-3.5" />
           </button>
 
-          {overlayUrl && (
-            <button
-              onClick={() => setState(prev => ({ ...prev, showOverlay: !prev.showOverlay }))}
-              className={`p-1.5 rounded-lg transition-all flex items-center gap-1 ${
-                state.showOverlay ? 'text-emerald-400 bg-emerald-500/10' : 'text-zinc-500 hover:text-zinc-300 hover:bg-white/5'
-              }`}
-              title="Toggle Heatmap"
-            >
-              {state.showOverlay ? <Eye className="w-3.5 h-3.5" /> : <EyeOff className="w-3.5 h-3.5" />}
-              <span className="text-[10px] hidden md:inline">Heatmap</span>
-            </button>
+          {hasOverlays && (
+            <>
+              <button
+                onClick={() => setState(prev => ({ ...prev, showOverlay: !prev.showOverlay }))}
+                className={`p-1.5 rounded-lg transition-all flex items-center gap-1 ${
+                  state.showOverlay ? 'text-emerald-400 bg-emerald-500/10' : 'text-zinc-500 hover:text-zinc-300 hover:bg-white/5'
+                }`}
+                title="Toggle Heatmap"
+              >
+                {state.showOverlay ? <Eye className="w-3.5 h-3.5" /> : <EyeOff className="w-3.5 h-3.5" />}
+                <span className="text-[10px] hidden md:inline">Heatmap</span>
+              </button>
+              {overlays.length > 1 && (
+                <select
+                  value={selectedOverlayIdx}
+                  onChange={e => setSelectedOverlayIdx(Number(e.target.value))}
+                  className="bg-black/60 border border-white/10 rounded-lg text-[10px] text-zinc-400 px-1 py-1 cursor-pointer"
+                  title="Select overlay model"
+                >
+                  {overlays.map((ov, i) => (
+                    <option key={ov.model_id} value={i}>
+                      {ov.model_id} ({ov.overlay_type})
+                    </option>
+                  ))}
+                </select>
+              )}
+            </>
           )}
         </div>
 
@@ -520,7 +620,7 @@ export function MedicalImageViewer({
       </div>
 
       {/* Canvas area */}
-      <div className="flex-1 relative flex">
+      <div className="flex-1 relative flex min-h-[420px]">
         <div
           ref={containerRef}
           className="flex-1 relative bg-black cursor-crosshair overflow-hidden"
@@ -530,7 +630,18 @@ export function MedicalImageViewer({
           onMouseLeave={handleMouseUp}
           onWheel={handleWheel}
         >
-          <canvas
+                      <button 
+              onClick={() => {
+                fetch(imageUrl)
+                  .then(r => r.blob())
+                  .then(b => alert('Fetched blob size: ' + b.size + ' type: ' + b.type))
+                  .catch(e => alert('Fetch err: ' + e));
+              }}
+              className="absolute top-2 left-2 z-50 bg-red-500 text-white px-2 py-1 rounded"
+            >
+              Debug Fetch
+            </button>
+            <canvas
             ref={canvasRef}
             className="absolute inset-0 w-full h-full"
           />
@@ -589,3 +700,23 @@ export function MedicalImageViewer({
     </div>
   );
 }
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+

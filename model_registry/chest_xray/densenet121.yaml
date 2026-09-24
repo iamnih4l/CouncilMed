@@ -1,0 +1,59 @@
+# =====================================================
+# CouncilMed — Model Manifest: Chest X-Ray DenseNet121
+# =====================================================
+name: "ChestXRay-DenseNet121"
+model_id: "chest_xray_densenet121"
+version: "1.0.0"
+description: "DenseNet121 model pretrained on multiple chest X-ray datasets via torchxrayvision."
+
+architecture: "TorchXRayVision_DenseNet121"
+architecture_family: "DenseNet"
+framework: "pytorch"
+
+tasks:
+  - classification
+modality: "XRAY"
+anatomy: "chest"
+
+num_classes: 18
+class_names:
+  - "Atelectasis"
+  - "Consolidation"
+  - "Infiltration"
+  - "Pneumothorax"
+  - "Edema"
+  - "Emphysema"
+  - "Fibrosis"
+  - "Effusion"
+  - "Pneumonia"
+  - "Pleural_Thickening"
+  - "Cardiomegaly"
+  - "Nodule"
+  - "Mass"
+  - "Hernia"
+  - "Lung Lesion"
+  - "Fracture"
+  - "Lung Opacity"
+  - "Enlarged Cardiomediastinum"
+
+input_shape: [224, 224, 1]
+input_format: "CHW"
+input_normalization: "xrv"
+
+weights_path: "model_registry/weights/chest_xray_densenet121.pth"
+weights_checksum: "2589a811070303c82dc39aa4b3d9f3ca9d9145d6540f839fca5eef2dedfc8d3d"
+weights_size_mb: 27.2
+pretrained_on: "Multiple CXR datasets (NIH, PC, CheX, MIMIC, etc.)"
+
+metrics:
+  dataset: "Multiple"
+  validated: true
+
+min_ram_gb: 1.0
+min_vram_gb: 1.0
+supports_cpu: true
+supports_cuda: true
+supports_mps: true
+
+license: "Apache 2.0"
+source: "torchxrayvision"
