@@ -1,0 +1,35 @@
+name: DenseNet-121 Thoracic CT Analyzer
+version: 1.0.0
+model_id: chest_ct_densenet_v1
+description: Production CT council model for chest analysis.
+architecture: CouncilDenseNetClassifier
+framework: pytorch
+architecture_family: DenseNet
+tasks:
+- classification
+modality: CT
+anatomy: chest
+class_names:
+- Pulmonary Nodule
+- Pulmonary Embolism
+- Ground-Glass Opacity
+- Normal
+num_classes: 4
+input_shape:
+- 224
+- 224
+- 3
+input_format: CHW
+input_normalization: imagenet
+weights_path: model_registry/weights/chest_ct_densenet_v1.pth
+weights_checksum: 434d1afe169ec819a8c4289cba49585b4cab85e2e86f73080a91d49b3b26368f
+weights_size_mb: 27.16
+pretrained_on: ImageNet + Clinical Calibration
+metrics:
+  dataset: CouncilMed-CT-Validation
+  dataset_size: 2500
+  split_method: patient-level 80/10/10
+  auroc: 0.93
+  accuracy: 0.9
+  ece: 0.04
+  validated: true

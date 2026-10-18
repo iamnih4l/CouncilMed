@@ -1,0 +1,36 @@
+name: AttentionNet CT Lesion Localizer
+version: 1.0.0
+model_id: chest_ct_attention_v1
+description: Production CT council model for chest analysis.
+architecture: AttentionNet
+framework: pytorch
+architecture_family: CNN-Attention
+tasks:
+- classification
+- localization
+modality: CT
+anatomy: chest
+class_names:
+- Pulmonary Nodule
+- Pulmonary Embolism
+- Ground-Glass Opacity
+- Normal
+num_classes: 4
+input_shape:
+- 224
+- 224
+- 3
+input_format: CHW
+input_normalization: imagenet
+weights_path: model_registry/weights/chest_ct_attention_v1.pth
+weights_checksum: 43b30d059028d1900d82c1c20ffdbaa308f6ca7bf274850c5e8315d39c7b4b99
+weights_size_mb: 9.09
+pretrained_on: ImageNet + Clinical Calibration
+metrics:
+  dataset: CouncilMed-CT-Validation
+  dataset_size: 2500
+  split_method: patient-level 80/10/10
+  auroc: 0.94
+  accuracy: 0.91
+  ece: 0.04
+  validated: true

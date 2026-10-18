@@ -85,21 +85,9 @@ CouncilMed requires extensive audit trails for medical compliance.
 
 ## 4. End-to-End Execution Flow
 
-<<<<<<< HEAD
-<<<<<<< HEAD
 1. **Upload:** User uploads a medical scan (MRI, CT, or X-Ray) via the React UI. Tauri relays the file directly to the FastAPI upload endpoint.
 2. **Preprocessing:** The backend saves a temporary version, parses the raw pixel array, and generates a visual preview PNG.
 3. **Council Invocation:** The pipeline queries the `ModelRegistry` for all models compatible with the `MRI/Brain`, `X-Ray/Chest`, or `CT/Chest` modality.
-=======
-1. **Upload:** User uploads an MRI scan via the React UI. Tauri relays the file directly to the FastAPI upload endpoint.
-2. **Preprocessing:** The backend saves a temporary version, parses the raw pixel array, and generates a visual preview PNG.
-3. **Council Invocation:** The pipeline queries the `ModelRegistry` for all models compatible with the `MRI/Brain` modality.
->>>>>>> 2c6b8eb (Fix X-Ray model architectures and update models to 3 per modality)
-=======
-1. **Upload:** User uploads an MRI scan via the React UI. Tauri relays the file directly to the FastAPI upload endpoint.
-2. **Preprocessing:** The backend saves a temporary version, parses the raw pixel array, and generates a visual preview PNG.
-3. **Council Invocation:** The pipeline queries the `ModelRegistry` for all models compatible with the `MRI/Brain` modality.
->>>>>>> 2c6b8eb (Fix X-Ray model architectures and update models to 3 per modality)
 4. **Parallel Inference:** Preprocessed tensors are dispatched to each model. Each returns logits, confidence, and (if applicable) spatial maps.
 5. **Explainability Generation:** The original preprocessed tensors are fed backward through the successful PyTorch models to generate Grad-CAM `.npy` files, which are immediately rendered to transparent `.png` overlays.
 6. **Consensus & Storage:** The `CouncilEngine` fuses the predictions. Results, bounding boxes, and image paths are committed to SQLite.

@@ -21,6 +21,7 @@ export interface ModelEvidenceResponse {
   error_message: string | null;
   bounding_box?: { x: number; y: number; width: number; height: number } | null;
   explainability_status?: 'available' | 'unsupported' | 'generated_no_artifact' | null;
+  device?: string;
 }
 
 export interface CouncilResultResponse {

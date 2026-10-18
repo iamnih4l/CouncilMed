@@ -1,17 +1,8 @@
-/**
- * CouncilMed — Council Analysis Hook
- * ======================================
- * React hook for running medical image analysis through the real backend.
- * 
- * Replaces `useDiagnosticEngine` which ran simulated inference in the browser.
- * Now calls the Python backend for genuine model forward passes.
- */
-
 import { useState, useCallback, useRef } from 'react';
 import { api } from '../services/api';
 import type { AnalyzeResponse } from '../services/api';
 
-export type AnalysisStatus = 
+export type AnalysisStatus =
   | 'idle'
   | 'uploading'
   | 'analyzing'
@@ -40,12 +31,9 @@ export function useCouncilAnalysis() {
 
   const startProgressAnimation = useCallback(() => {
     startTimeRef.current = performance.now();
-    
-    // Animate progress from 0 to ~90% while waiting for backend
     let progress = 0;
     progressIntervalRef.current = setInterval(() => {
       const elapsed = performance.now() - startTimeRef.current;
-      // Asymptotic curve: approaches 90% but never reaches it
       progress = 90 * (1 - Math.exp(-elapsed / 3000));
       setState(prev => ({
         ...prev,
@@ -62,7 +50,6 @@ export function useCouncilAnalysis() {
     }
   }, []);
 
-  // Analyze by uploading a file (browser mode)
   const analyzeFile = useCallback(async (
     file: File,
     options?: {
@@ -90,7 +77,7 @@ export function useCouncilAnalysis() {
         modality: options?.modality,
         anatomy: options?.anatomy,
         enable_explainability: options?.enableExplainability ?? true,
-        enable_agent: options?.enableAgent ?? false,
+        enable_agent: options?.enableAgent ?? true,
       });
 
       stopProgressAnimation();
@@ -117,7 +104,6 @@ export function useCouncilAnalysis() {
     }
   }, [startProgressAnimation, stopProgressAnimation]);
 
-  // Analyze by file path (Tauri/desktop mode)
   const analyzeByPath = useCallback(async (
     filePath: string,
     options?: {
@@ -145,7 +131,7 @@ export function useCouncilAnalysis() {
         modality_override: options?.modality,
         anatomy_override: options?.anatomy,
         enable_explainability: options?.enableExplainability ?? true,
-        enable_agent: options?.enableAgent ?? false,
+        enable_agent: options?.enableAgent ?? true,
       });
 
       stopProgressAnimation();

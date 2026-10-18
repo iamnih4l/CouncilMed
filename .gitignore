@@ -46,3 +46,7 @@ temp_*.py
 test.png
 test_*.py
 testing_data/
+*.zip
+*.lnk
+Untitled*
+Untitled-*

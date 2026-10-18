@@ -1,0 +1,36 @@
+name: ResNet-50 Chest Radiograph Classifier
+version: 1.0.0
+model_id: chest_xray_resnet_v1
+description: Production XRAY council model for chest analysis.
+architecture: CouncilResNetClassifier
+framework: pytorch
+architecture_family: ResNet
+tasks:
+- classification
+- localization
+modality: XRAY
+anatomy: chest
+class_names:
+- Pneumonia
+- Pneumothorax
+- Pleural Effusion
+- Normal
+num_classes: 4
+input_shape:
+- 224
+- 224
+- 3
+input_format: CHW
+input_normalization: imagenet
+weights_path: model_registry/weights/chest_xray_resnet_v1.pth
+weights_checksum: e8279563cbf5f6cd498cc7d2df773274307dad40fed7f3b3a6d55ac583e21b60
+weights_size_mb: 90.04
+pretrained_on: ImageNet + Clinical Calibration
+metrics:
+  dataset: CouncilMed-XRAY-Validation
+  dataset_size: 2500
+  split_method: patient-level 80/10/10
+  auroc: 0.92
+  accuracy: 0.89
+  ece: 0.05
+  validated: true

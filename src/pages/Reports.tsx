@@ -5,19 +5,19 @@
  * Reports are generated from real evidence — no fabricated content.
  */
 
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useCallback } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import {
   FileText, Download, Loader2, AlertCircle, ChevronDown,
   ChevronRight, Shield, Brain, Clock, Copy, Check,
-  AlertTriangle, Info,
+  AlertTriangle, Info, Printer,
 } from 'lucide-react';
-import { useNavigate } from 'react-router-dom';
+import { useNavigate, useSearchParams } from 'react-router-dom';
 import { GlassCard } from '../components/ui/GlassCard';
 import { api } from '../services/api';
 import type { AnalysisHistoryItem, ReportResponse, ReportSectionResponse } from '../services/api';
 
-function ReportSection({ section, depth = 0 }: { section: ReportSectionResponse; depth?: number }) {
+export function ReportSection({ section, depth = 0 }: { section: ReportSectionResponse; depth?: number }) {
   const [expanded, setExpanded] = useState(true);
 
   const severityStyles: Record<string, string> = {
@@ -73,7 +73,7 @@ function ReportSection({ section, depth = 0 }: { section: ReportSectionResponse;
   );
 }
 
-function ReportViewer({ report }: { report: ReportResponse }) {
+export function ReportViewer({ report, className = '' }: { report: ReportResponse; className?: string }) {
   const [copied, setCopied] = useState(false);
   const [showText, setShowText] = useState(false);
 
@@ -109,7 +109,7 @@ function ReportViewer({ report }: { report: ReportResponse }) {
     <motion.div
       initial={{ opacity: 0, y: 20 }}
       animate={{ opacity: 1, y: 0 }}
-      className="space-y-4"
+      className={`space-y-4 ${className}`.trim()}
     >
       {/* Report Header */}
       <GlassCard>
@@ -212,6 +212,13 @@ function ReportViewer({ report }: { report: ReportResponse }) {
           <Download className="w-3.5 h-3.5" /> Download .txt
         </button>
         <button
+          onClick={() => window.print()}
+          className="flex items-center gap-1.5 px-4 py-2 rounded-lg text-xs font-medium
+            bg-white/5 text-zinc-400 hover:bg-white/10 hover:text-white transition-all"
+        >
+          <Printer className="w-3.5 h-3.5" /> Print
+        </button>
+        <button
           onClick={() => setShowText(!showText)}
           className="flex items-center gap-1.5 px-4 py-2 rounded-lg text-xs font-medium
             bg-white/5 text-zinc-400 hover:bg-white/10 hover:text-white transition-all"
@@ -254,12 +261,30 @@ function ReportViewer({ report }: { report: ReportResponse }) {
 
 export default function ReportsPage() {
   const navigate = useNavigate();
+  const [searchParams] = useSearchParams();
+  const queryAnalysisId = searchParams.get('analysis_id') || searchParams.get('id');
+
   const [analyses, setAnalyses] = useState<AnalysisHistoryItem[]>([]);
-  const [selectedAnalysis, setSelectedAnalysis] = useState<string | null>(null);
+  const [selectedAnalysis, setSelectedAnalysis] = useState<string | null>(queryAnalysisId || null);
   const [report, setReport] = useState<ReportResponse | null>(null);
   const [loading, setLoading] = useState(false);
   const [generating, setGenerating] = useState(false);
   const [error, setError] = useState<string | null>(null);
+
+  const handleGenerateReport = useCallback(async (analysisId: string) => {
+    setGenerating(true);
+    setError(null);
+    setSelectedAnalysis(analysisId);
+
+    try {
+      const reportData = await api.generateReport({ analysis_id: analysisId });
+      setReport(reportData);
+    } catch (err) {
+      setError(err instanceof Error ? err.message : 'Report generation failed');
+    } finally {
+      setGenerating(false);
+    }
+  }, []);
 
   useEffect(() => {
     async function fetchAnalyses() {
@@ -276,21 +301,11 @@ export default function ReportsPage() {
     fetchAnalyses();
   }, []);
 
-  const handleGenerateReport = async (analysisId: string) => {
-    setGenerating(true);
-    setError(null);
-    setReport(null);
-    setSelectedAnalysis(analysisId);
-
-    try {
-      const reportData = await api.generateReport({ analysis_id: analysisId });
-      setReport(reportData);
-    } catch (err) {
-      setError(err instanceof Error ? err.message : 'Report generation failed');
-    } finally {
-      setGenerating(false);
+  useEffect(() => {
+    if (queryAnalysisId) {
+      handleGenerateReport(queryAnalysisId);
     }
-  };
+  }, [queryAnalysisId, handleGenerateReport]);
 
   return (
     <motion.div

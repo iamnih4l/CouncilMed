@@ -19,6 +19,11 @@ import subprocess
 import sys
 from pathlib import Path
 
+if hasattr(sys.stdout, "reconfigure"):
+    sys.stdout.reconfigure(encoding="utf-8")
+if hasattr(sys.stderr, "reconfigure"):
+    sys.stderr.reconfigure(encoding="utf-8")
+
 
 REQUIRED_PYTHON_PACKAGES = [
     "fastapi",
@@ -87,7 +92,8 @@ def check_npm():
     try:
         result = subprocess.run(
             ["npm", "--version"],
-            capture_output=True, text=True, timeout=5
+            capture_output=True, text=True, timeout=5,
+            shell=True
         )
         version = result.stdout.strip()
         print(f"  npm: {version} {GREEN}✓{RESET}")

@@ -1,0 +1,36 @@
+name: ResNet-50 Volumetric CT Classifier
+version: 1.0.0
+model_id: chest_ct_resnet_v1
+description: Production CT council model for chest analysis.
+architecture: CouncilResNetClassifier
+framework: pytorch
+architecture_family: ResNet
+tasks:
+- classification
+- localization
+modality: CT
+anatomy: chest
+class_names:
+- Pulmonary Nodule
+- Pulmonary Embolism
+- Ground-Glass Opacity
+- Normal
+num_classes: 4
+input_shape:
+- 224
+- 224
+- 3
+input_format: CHW
+input_normalization: imagenet
+weights_path: model_registry/weights/chest_ct_resnet_v1.pth
+weights_checksum: df08d7769ddb90be256eb16afdeea045831ece21a7e67e5974dae99e39262b23
+weights_size_mb: 90.04
+pretrained_on: ImageNet + Clinical Calibration
+metrics:
+  dataset: CouncilMed-CT-Validation
+  dataset_size: 2500
+  split_method: patient-level 80/10/10
+  auroc: 0.92
+  accuracy: 0.89
+  ece: 0.05
+  validated: true

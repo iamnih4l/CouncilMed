@@ -19,7 +19,7 @@ import {
   Shield, ShieldAlert, ShieldCheck, ShieldX,
   ChevronDown, ChevronUp, AlertTriangle,
   CheckCircle, XCircle, Clock, Cpu, Brain,
-  Eye, Activity, TrendingUp, Edit3,
+  Activity, TrendingUp, Edit3,
 } from 'lucide-react';
 import type { CouncilResultResponse, ModelEvidenceResponse } from '../../services/api';
 

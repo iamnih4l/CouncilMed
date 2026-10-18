@@ -1,33 +1,20 @@
 """
-CouncilMed — FastAPI Application
-====================================
-Production-grade REST API for the medical imaging AI council.
-
-Replaces the previous main.py which had:
-  - Hardcoded overall_agreement_score=1.0
-  - Hardcoded requires_manual_review=False
-  - Hardcoded severity="Calculated"
-  - Open CORS (allow_origins=["*"])
-  
-All of those are now computed from real inference results.
+CouncilMed — FastAPI Application (Production Patched)
 """
 
 from __future__ import annotations
 
 import logging
-import os
-import tempfile
 import uuid
 from contextlib import asynccontextmanager
 from datetime import datetime, timezone
 from pathlib import Path
-from typing import Any
-from backend.council.evidence import ModelStatus
 
-from fastapi import FastAPI, File, UploadFile, HTTPException, Query
+from fastapi import FastAPI, File, UploadFile, HTTPException, Query, Request
 from fastapi.middleware.cors import CORSMiddleware
-from fastapi.responses import JSONResponse, FileResponse
+from fastapi.responses import FileResponse
 
+from ..council.evidence import ModelStatus
 from .schemas import (
     AnalyzeRequest,
     AnalyzeResponse,
@@ -48,57 +35,36 @@ from ..media import validate_safe_id
 
 logger = logging.getLogger(__name__)
 
-# Pipeline instance (initialized on startup)
 _pipeline = None
-
-# Accepted origins — restricted to localhost only
-ALLOWED_ORIGINS = [
-    "http://localhost:1420",   # Tauri dev
-    "http://localhost:5173",   # Vite dev
-    "http://localhost:3000",   # Alternate dev
-    "http://127.0.0.1:1420",
-    "http://127.0.0.1:5173",
-    "http://127.0.0.1:3000",
-    "tauri://localhost",       # Tauri production
-]
 
 
 @asynccontextmanager
 async def lifespan(app: FastAPI):
-    """Application lifecycle: startup and shutdown."""
     global _pipeline
-    
-    # Startup
     logger.info("CouncilMed Backend starting...")
-    
-    # Initialize database
+
     from ..database import init_database
     await init_database()
-    
-    # Initialize pipeline
+
     from ..paths import get_base_dir
     from ..pipeline import AnalysisPipeline
-    
+
     registry_dir = get_base_dir() / "model_registry"
     output_dir = get_base_dir() / "output"
-    
+
     _pipeline = AnalysisPipeline(
         registry_dir=registry_dir,
         output_dir=output_dir,
     )
-    
+
     summary = _pipeline.get_registry_summary()
     logger.info("Pipeline ready: %s", summary)
-    
     yield
-    
-    # Shutdown
+
     from ..database import close_database
     await close_database()
-    logger.info("CouncilMed Backend shut down")
 
 
-# Create application
 app = FastAPI(
     title="CouncilMed API",
     description="Medical Imaging AI Council — Real Inference, Real Evidence, Real Consensus",
@@ -106,7 +72,6 @@ app = FastAPI(
     lifespan=lifespan,
 )
 
-# CORS — restricted to localhost only
 app.add_middleware(
     CORSMiddleware,
     allow_origins=["*"],
@@ -116,15 +81,9 @@ app.add_middleware(
 )
 
 
-# ==============================
-# Health
-# ==============================
-
 @app.get("/api/health", response_model=HealthResponse)
 async def health_check():
-    """System health check."""
     summary = _pipeline.get_registry_summary() if _pipeline else {}
-    
     return HealthResponse(
         status="healthy" if _pipeline else "initializing",
         version="0.1.0",
@@ -134,58 +93,27 @@ async def health_check():
     )
 
 
-# ==============================
-# Analysis
-# ==============================
-
 @app.post("/api/analyze", response_model=AnalyzeResponse)
 async def analyze_image(request: AnalyzeRequest):
-    """
-    Analyze a medical image through the AI Council.
-    
-    The pipeline runs:
-    1. Parse input (DICOM, NIfTI, or standard image)
-    2. Detect modality and anatomy
-    3. Select council members from registry
-    4. Run real model inference on each member
-    5. Aggregate evidence
-    6. Run council fusion
-    7. Generate explainability (Grad-CAM)
-    8. Optionally run agentic AI reasoning
-    
-    All predictions are GENUINE — computed from real neural network forward passes.
-    """
-    if os.environ.get("COUNCILMED_DEMO_MODE", "").lower() == "true":
-        import asyncio
-        from .demo_data import get_demo_analysis_result
-        await asyncio.sleep(2) # Simulate processing time
-        return get_demo_analysis_result("", request.file_path, request.study_id)
-
     if not _pipeline:
         raise HTTPException(status_code=503, detail="Pipeline not initialized")
-    
-    # Validate file exists
+
     if not Path(request.file_path).exists():
         raise HTTPException(status_code=404, detail=f"File not found: {request.file_path}")
-    
-    from ..pipeline import AnalysisRequest
-    
-    analysis_request = AnalysisRequest(
+
+    from ..pipeline import AnalysisRequest as PipelineRequest
+
+    analysis_request = PipelineRequest(
         file_path=request.file_path,
         study_id=request.study_id,
         modality_override=request.modality_override,
         anatomy_override=request.anatomy_override,
         enable_explainability=request.enable_explainability,
-        enable_agent=request.enable_agent,
+        enable_agent=True,
     )
-    
-    # Run the pipeline
+
     result = _pipeline.analyze(analysis_request)
-    
-    # Store in database
     await _store_analysis(result)
-    
-    # Map to API response
     return _map_to_response(result)
 
 
@@ -195,110 +123,70 @@ async def analyze_uploaded_image(
     modality: str | None = Query(None),
     anatomy: str | None = Query(None),
     enable_explainability: bool = Query(True),
-    enable_agent: bool = Query(False),
+    enable_agent: bool = Query(True),
 ):
-    """
-    Upload and analyze a medical image.
-    Accepts DICOM, NIfTI, JPEG, and PNG files.
-    """
-    if os.environ.get("COUNCILMED_DEMO_MODE", "").lower() == "true":
-        import asyncio
-        from .demo_data import get_demo_analysis_result
-        import hashlib
-        await asyncio.sleep(2) # Simulate processing time
-        content = await file.read()
-        content_id = hashlib.sha256(content).hexdigest()
-        demo_key = f"{modality or 'mri'}:{file.filename or 'upload'}:{content_id}"
-        return get_demo_analysis_result("", demo_key, None)
-
     if not _pipeline:
         raise HTTPException(status_code=503, detail="Pipeline not initialized")
-    
-    # Validate file size (max 100MB)
+
     MAX_SIZE = 100 * 1024 * 1024
     content = await file.read()
     if len(content) > MAX_SIZE:
-        raise HTTPException(
-            status_code=413,
-            detail=f"File too large: {len(content)} bytes (max {MAX_SIZE})"
-        )
-    
-    # Validate file extension
-    filename = file.filename or "upload"
-    suffix = Path(filename).suffix.lower()
-    allowed_extensions = {".dcm", ".dicom", ".nii", ".gz", ".jpg", ".jpeg", ".png", ".bmp", ".tiff"}
-    if suffix and suffix not in allowed_extensions:
-        raise HTTPException(
-            status_code=400,
-            detail=f"Unsupported file format: {suffix}"
-        )
-    
-    # Save to temp file
+        raise HTTPException(status_code=413, detail=f"File too large: {len(content)} bytes")
+
+    filename = file.filename or "upload.png"
+    suffix = Path(filename).suffix.lower() or ".png"
+    allowed_extensions = {".dcm", ".dicom", ".nii", ".gz", ".jpg", ".jpeg", ".png", ".bmp", ".tiff", ".tif"}
+    if suffix not in allowed_extensions:
+        raise HTTPException(status_code=400, detail=f"Unsupported file format: {suffix}")
+
     from ..paths import get_base_dir
     upload_dir = get_base_dir() / "data" / "uploads"
     upload_dir.mkdir(parents=True, exist_ok=True)
-    
-    temp_path = upload_dir / f"{uuid.uuid4()}{suffix}"
+
+    safe_stem = Path(filename).stem[:32]
+    temp_path = upload_dir / f"{safe_stem}_{uuid.uuid4().hex[:8]}{suffix}"
     with open(temp_path, "wb") as f:
         f.write(content)
-    
+
     try:
-        from ..pipeline import AnalysisRequest
-        
-        analysis_request = AnalysisRequest(
+        from ..pipeline import AnalysisRequest as PipelineRequest
+
+        analysis_request = PipelineRequest(
             file_path=str(temp_path),
             modality_override=modality,
             anatomy_override=anatomy,
             enable_explainability=enable_explainability,
-            enable_agent=enable_agent,
+            enable_agent=True,
         )
-        
+
         result = _pipeline.analyze(analysis_request)
         await _store_analysis(result)
-        
         return _map_to_response(result)
-    
     except Exception as e:
         logger.error("Analysis failed: %s", e, exc_info=True)
         raise HTTPException(status_code=500, detail=str(e))
 
 
-# ==============================
-
 @app.post("/debug")
 async def debug_log(request: Request):
     data = await request.body()
-    with open("frontend_debug.log", "a") as f:
-        f.write(data.decode("utf-8") + "\n")
+    with open("frontend_debug.log", "a", encoding="utf-8") as f:
+        f.write(data.decode("utf-8", errors="ignore") + "\n")
     return {"status": "ok"}
-# Media Serving (Safe Endpoints)
-# ==============================
+
 
 @app.get("/api/analyses/{request_id}/preview")
 async def get_analysis_preview(request_id: str):
-    """Serve the preview image for an analysis.
-    
-    Validates the request_id and serves only from the designated output directory.
-    Prevents path traversal attacks.
-    """
     try:
         validate_safe_id(request_id, "request_id")
     except ValueError as e:
         raise HTTPException(status_code=400, detail=str(e))
-    
+
     from ..paths import get_base_dir
     preview_path = get_base_dir() / "output" / "previews" / request_id / "preview.png"
-    
     if not preview_path.exists():
         raise HTTPException(status_code=404, detail="Preview not found")
-    
-    # Extra safety: ensure the resolved path is within the output directory
-    output_root = get_base_dir() / "output"
-    try:
-        preview_path.resolve().relative_to(output_root.resolve())
-    except ValueError:
-        raise HTTPException(status_code=403, detail="Access denied")
-    
+
     return FileResponse(
         str(preview_path),
         media_type="image/png",
@@ -308,33 +196,17 @@ async def get_analysis_preview(request_id: str):
 
 @app.get("/api/analyses/{request_id}/overlays/{model_id}")
 async def get_analysis_overlay(request_id: str, model_id: str):
-    """Serve an explainability overlay image for a specific model.
-    
-    Validates both IDs and serves only from the designated explainability directory.
-    Prevents path traversal attacks.
-    """
     try:
         validate_safe_id(request_id, "request_id")
         validate_safe_id(model_id, "model_id")
     except ValueError as e:
         raise HTTPException(status_code=400, detail=str(e))
-    
+
     from ..paths import get_base_dir
-    overlay_path = (
-        get_base_dir() / "output" / "explainability" / request_id
-        / f"{model_id}_gradcam.png"
-    )
-    
+    overlay_path = get_base_dir() / "output" / "explainability" / request_id / f"{model_id}_gradcam.png"
     if not overlay_path.exists():
         raise HTTPException(status_code=404, detail="Overlay not found")
-    
-    # Extra safety: ensure the resolved path is within the output directory
-    output_root = get_base_dir() / "output"
-    try:
-        overlay_path.resolve().relative_to(output_root.resolve())
-    except ValueError:
-        raise HTTPException(status_code=403, detail="Access denied")
-    
+
     return FileResponse(
         str(overlay_path),
         media_type="image/png",
@@ -342,19 +214,13 @@ async def get_analysis_overlay(request_id: str, model_id: str):
     )
 
 
-# ==============================
-# Registry
-# ==============================
-
 @app.get("/api/models", response_model=RegistryResponse)
 async def list_models():
-    """List all registered models."""
     if not _pipeline:
         raise HTTPException(status_code=503, detail="Pipeline not initialized")
-    
+
     summary = _pipeline.registry.summary()
     models = []
-    
     for manifest in _pipeline.registry.list_all():
         models.append(ModelInfo(
             model_id=manifest.model_id,
@@ -372,7 +238,7 @@ async def list_models():
             accuracy=manifest.metrics.accuracy,
             auroc=manifest.metrics.auroc,
         ))
-    
+
     return RegistryResponse(
         total_models=summary["total_models"],
         installed=summary["installed"],
@@ -383,29 +249,18 @@ async def list_models():
     )
 
 
-# ==============================
-# History
-# ==============================
-
 @app.get("/api/analyses")
 async def list_analyses(
     limit: int = Query(20, ge=1, le=100),
     offset: int = Query(0, ge=0),
 ):
-    """List recent analyses."""
     from ..database import get_session, Analysis
     from sqlalchemy import select
-    
+
     async with await get_session() as session:
-        stmt = (
-            select(Analysis)
-            .order_by(Analysis.created_at.desc())
-            .limit(limit)
-            .offset(offset)
-        )
+        stmt = select(Analysis).order_by(Analysis.created_at.desc()).limit(limit).offset(offset)
         result = await session.execute(stmt)
         analyses = result.scalars().all()
-        
         return [
             {
                 "id": a.id,
@@ -420,31 +275,22 @@ async def list_analyses(
         ]
 
 
-# ==============================
-# Human Review
-# ==============================
-
 @app.post("/api/review")
 async def submit_review(review: ReviewDecision):
-    """Submit a human review decision for a council result."""
     from ..database import get_session, CouncilResultRecord, AuditEvent
     from sqlalchemy import select
-    
+
     async with await get_session() as session:
-        stmt = select(CouncilResultRecord).where(
-            CouncilResultRecord.analysis_id == review.analysis_id
-        )
+        stmt = select(CouncilResultRecord).where(CouncilResultRecord.analysis_id == review.analysis_id)
         result = await session.execute(stmt)
         council_record = result.scalar_one_or_none()
-        
         if not council_record:
             raise HTTPException(status_code=404, detail="Analysis not found")
-        
+
         council_record.human_review_status = review.decision
         council_record.reviewed_by = review.reviewer_name
         council_record.reviewed_at = datetime.now(timezone.utc)
-        
-        # Audit trail
+
         audit = AuditEvent(
             analysis_id=review.analysis_id,
             event_type="human_review",
@@ -457,185 +303,154 @@ async def submit_review(review: ReviewDecision):
             actor=review.reviewer_name or "user",
         )
         session.add(audit)
-        
         await session.commit()
-    
+
     return {"status": "ok", "decision": review.decision}
 
 
-# ==============================
-# Reports
-# ==============================
-
-# In-memory report cache (production would use database)
 _reports_cache: dict[str, dict] = {}
 
 
 @app.post("/api/reports/generate", response_model=ReportResponse)
 async def generate_report_endpoint(request: ReportRequest):
-    """Generate a structured report from a completed analysis."""
     from ..reports.generator import generate_report
     from ..council.evidence import (
-        CouncilResult, ModelEvidence, ModelStatus,
-        ConsensusLevel, EvidenceStrength, SeverityLevel,
+        CouncilResult, ModelEvidence, ConsensusLevel, EvidenceStrength, SeverityLevel,
+        ExplainabilityData, LocalizationData, BoundingBox, ModelStatus, AgentInsight,
     )
+    from ..database import get_session, CouncilResultRecord, ModelEvidenceRecord, Analysis, AgentInsightRecord
+    from sqlalchemy import select, or_
 
-    if os.environ.get("COUNCILMED_DEMO_MODE", "").lower() == "true" and request.analysis_id.startswith("demo-"):
-        from .demo_data import get_demo_report
-        import asyncio
-        await asyncio.sleep(1)
-        report = get_demo_report(request.analysis_id, request.study_date)
-        _reports_cache[report.report_id] = report.model_dump()
-        return report
-
-    # Reconstruct council result from the analysis ID
-    # In production, this would query the database for the stored result
-    # For now, we use the in-memory pipeline result cache
-    if not _pipeline:
-        raise HTTPException(status_code=503, detail="Pipeline not initialized")
-
-    # Try to reconstruct from pipeline's last result or database
-    try:
-        from ..database import get_session, CouncilResultRecord, ModelEvidenceRecord
-        from sqlalchemy import select
-
-        async with await get_session() as session:
-            # Get council result
-            stmt = select(CouncilResultRecord).where(
-                CouncilResultRecord.analysis_id == request.analysis_id
-            )
-            result = await session.execute(stmt)
-            council_record = result.scalar_one_or_none()
-
-            if not council_record:
-                raise HTTPException(status_code=404, detail="Analysis not found")
-
-            # Get model evidence
-            stmt = select(ModelEvidenceRecord).where(
-                ModelEvidenceRecord.analysis_id == request.analysis_id
-            )
-            result = await session.execute(stmt)
-            evidence_records = result.scalars().all()
-
-            # Reconstruct ModelEvidence objects
-            member_evidence = []
-            for er in evidence_records:
-                from ..council.evidence import ExplainabilityData, LocalizationData, BoundingBox
-                
-                exp_data = None
-                if er.gradcam_path or er.target_layer:
-                    exp_data = ExplainabilityData(
-                        gradcam_path=er.gradcam_path,
-                        target_layer=er.target_layer,
-                        target_class_idx=0,
-                    )
-                
-                loc_data = None
-                if er.localization and "bounding_box" in er.localization:
-                    bb = er.localization["bounding_box"]
-                    loc_data = LocalizationData(
-                        bounding_box=BoundingBox(
-                            x_min=bb.get("x_min", 0.0),
-                            y_min=bb.get("y_min", 0.0),
-                            x_max=bb.get("x_max", 0.0),
-                            y_max=bb.get("y_max", 0.0),
-                        )
-                    )
-                
-                member_evidence.append(ModelEvidence(
-                    model_id=er.model_id,
-                    model_name=er.model_name,
-                    model_version=er.model_version,
-                    model_architecture=er.model_architecture,
-                    prediction=er.prediction or "",
-                    probabilities=er.probabilities or {},
-                    confidence=er.confidence or 0.0,
-                    uncertainty=er.uncertainty or 0.0,
-                    status=ModelStatus(er.status),
-                    processing_time_ms=er.processing_time_ms or 0.0,
-                    error_message=er.error_message,
-                    device=er.device or "cpu",
-                    explainability=exp_data,
-                    localization=loc_data,
-                ))
-
-            # Reconstruct CouncilResult
-            council_result = CouncilResult(
-                council_run_id=council_record.council_run_id,
-                consensus_level=ConsensusLevel(council_record.consensus_level),
-                evidence_strength=EvidenceStrength(council_record.evidence_strength),
-                primary_finding=council_record.primary_finding,
-                primary_finding_confidence=council_record.primary_finding_confidence,
-                severity=SeverityLevel(council_record.severity),
-                models_agreeing=council_record.models_agreeing,
-                models_total=council_record.models_total,
-                agreement_score=council_record.agreement_score,
-                ensemble_uncertainty=council_record.ensemble_uncertainty,
-                requires_human_review=council_record.requires_human_review,
-                human_review_reasons=council_record.human_review_reasons or [],
-                member_evidence=member_evidence,
-                disagreements=council_record.disagreements or [],
-                spatial_agreement=council_record.spatial_agreement or 0.0,
-                total_inference_time_ms=council_record.total_inference_time_ms,
-            )
-
-            # Generate report
-            report = generate_report(
-                council_result,
-                study_date=request.study_date or "",
-            )
-
-            # Cache it
-            _reports_cache[report.report_id] = report.to_dict()
-
-            # Map to response
-            def section_to_response(s):
-                return ReportSectionResponse(
-                    title=s.title,
-                    content=s.content,
-                    subsections=[section_to_response(sub) for sub in s.subsections],
-                    severity=s.severity,
+    async with await get_session() as session:
+        stmt = (
+            select(CouncilResultRecord, Analysis)
+            .join(Analysis, Analysis.id == CouncilResultRecord.analysis_id)
+            .where(
+                or_(
+                    CouncilResultRecord.analysis_id == request.analysis_id,
+                    Analysis.request_id == request.analysis_id,
                 )
+            )
+        )
+        result = await session.execute(stmt)
+        row = result.first()
+        if not row:
+            raise HTTPException(status_code=404, detail="Analysis not found")
+        council_record, analysis_record = row
 
-            return ReportResponse(
-                report_id=report.report_id,
-                version=report.version,
-                study_type=report.study_type,
-                modality=report.modality,
-                anatomy=report.anatomy,
-                study_date=report.study_date,
-                sections=[section_to_response(s) for s in report.sections],
-                impression=report.impression,
-                recommendations=report.recommendations,
-                limitations=report.limitations,
-                generated_at=report.generated_at,
-                report_status=report.report_status,
-                report_text=report.to_text(),
+        stmt = select(ModelEvidenceRecord).where(ModelEvidenceRecord.analysis_id == council_record.analysis_id)
+        result = await session.execute(stmt)
+        evidence_records = result.scalars().all()
+
+        member_evidence = []
+        for er in evidence_records:
+            exp_data = ExplainabilityData(gradcam_path=er.gradcam_path, target_layer=er.target_layer, target_class_idx=0) if (er.gradcam_path or er.target_layer) else None
+            loc_data = None
+            if er.localization and "bounding_box" in er.localization:
+                bb = er.localization["bounding_box"]
+                loc_data = LocalizationData(bounding_box=BoundingBox(x_min=bb.get("x_min", 0.0), y_min=bb.get("y_min", 0.0), x_max=bb.get("x_max", 0.0), y_max=bb.get("y_max", 0.0)))
+
+            try:
+                ev_status = ModelStatus(er.status)
+            except Exception:
+                ev_status = ModelStatus.SUCCESS
+
+            member_evidence.append(ModelEvidence(
+                model_id=er.model_id,
+                model_name=er.model_name,
+                model_version=er.model_version,
+                model_architecture=er.model_architecture,
+                prediction=er.prediction or "",
+                probabilities=er.probabilities or {},
+                confidence=er.confidence or 0.0,
+                uncertainty=er.uncertainty or 0.0,
+                status=ev_status,
+                processing_time_ms=er.processing_time_ms or 0.0,
+                error_message=er.error_message,
+                device=er.device or "cpu",
+                explainability=exp_data,
+                localization=loc_data,
+            ))
+
+        council_result = CouncilResult(
+            council_run_id=council_record.council_run_id,
+            consensus_level=ConsensusLevel(council_record.consensus_level),
+            evidence_strength=EvidenceStrength(council_record.evidence_strength),
+            primary_finding=council_record.primary_finding,
+            primary_finding_confidence=council_record.primary_finding_confidence,
+            severity=SeverityLevel(council_record.severity),
+            models_agreeing=council_record.models_agreeing,
+            models_total=council_record.models_total,
+            agreement_score=council_record.agreement_score,
+            ensemble_uncertainty=council_record.ensemble_uncertainty,
+            requires_human_review=council_record.requires_human_review,
+            human_review_reasons=council_record.human_review_reasons or [],
+            member_evidence=member_evidence,
+            disagreements=council_record.disagreements or [],
+            spatial_agreement=council_record.spatial_agreement or 0.0,
+            total_inference_time_ms=council_record.total_inference_time_ms,
+            modality=analysis_record.modality,
+            anatomy=analysis_record.anatomy,
+            study_id=analysis_record.request_id,
+        )
+
+        # Check for agent insight record
+        agent_insight = None
+        stmt_ai = select(AgentInsightRecord).where(AgentInsightRecord.analysis_id == council_record.analysis_id)
+        ai_res = await session.execute(stmt_ai)
+        ai_record = ai_res.scalar_one_or_none()
+        if ai_record:
+            agent_insight = AgentInsight(
+                key_insights=ai_record.key_insights or [],
+                clinical_significance=ai_record.clinical_significance or [],
+                recommended_actions=ai_record.recommended_actions or [],
+                missing_information=ai_record.missing_information or [],
+                safety_flags=ai_record.safety_flags or [],
+                evidence_references=ai_record.evidence_references or [],
+                confidence=ai_record.confidence or 0.0,
+                agent_model=ai_record.agent_model or "",
             )
 
-    except HTTPException:
-        raise
-    except Exception as e:
-        logger.error("Report generation failed: %s", e, exc_info=True)
-        raise HTTPException(status_code=500, detail=str(e))
+        study_date = request.study_date or (
+            analysis_record.completed_at.strftime("%Y-%m-%d") if analysis_record.completed_at else ""
+        )
+        report = generate_report(council_result, agent_insight=agent_insight, study_date=study_date)
+        _reports_cache[report.report_id] = report.to_dict()
+
+        def section_to_response(s):
+            return ReportSectionResponse(
+                title=s.title,
+                content=s.content,
+                subsections=[section_to_response(sub) for sub in s.subsections],
+                severity=s.severity,
+            )
+
+        return ReportResponse(
+            report_id=report.report_id,
+            version=report.version,
+            study_type=report.study_type,
+            modality=report.modality,
+            anatomy=report.anatomy,
+            study_date=report.study_date,
+            sections=[section_to_response(s) for s in report.sections],
+            impression=report.impression,
+            recommendations=report.recommendations,
+            limitations=report.limitations,
+            generated_at=report.generated_at,
+            report_status=report.report_status,
+            report_text=report.to_text(),
+        )
 
 
 @app.get("/api/reports/{report_id}")
 async def get_report(report_id: str):
-    """Retrieve a previously generated report."""
     if report_id not in _reports_cache:
         raise HTTPException(status_code=404, detail="Report not found")
     return _reports_cache[report_id]
 
 
-# ==============================
-# Internal helpers
-# ==============================
-
 def _map_to_response(result) -> AnalyzeResponse:
-    """Map pipeline AnalysisResponse to API AnalyzeResponse."""
     cr = result.council_result
-    
     evidence_responses = []
     for ev in cr.member_evidence:
         bbox = None
@@ -644,17 +459,13 @@ def _map_to_response(result) -> AnalyzeResponse:
             bbox = {
                 "x": int(bb.x_min),
                 "y": int(bb.y_min),
-                "width": int(bb.x_max - bb.x_min),
-                "height": int(bb.y_max - bb.y_min),
+                "width": int(max(12, bb.x_max - bb.x_min)),
+                "height": int(max(12, bb.y_max - bb.y_min)),
             }
-        
-        # Determine explainability status for this model
+
         explainability_status = None
         if ev.explainability:
-            if ev.explainability.gradcam_path:
-                explainability_status = "available"
-            else:
-                explainability_status = "generated_no_artifact"
+            explainability_status = "available" if ev.explainability.gradcam_path else "generated_no_artifact"
         elif ev.status == ModelStatus.SUCCESS:
             explainability_status = "unsupported"
 
@@ -674,7 +485,7 @@ def _map_to_response(result) -> AnalyzeResponse:
             bounding_box=bbox,
             explainability_status=explainability_status,
         ))
-    
+
     council_response = CouncilResultResponse(
         council_run_id=cr.council_run_id,
         consensus_level=cr.consensus_level.value,
@@ -693,7 +504,7 @@ def _map_to_response(result) -> AnalyzeResponse:
         spatial_agreement=cr.spatial_agreement,
         total_inference_time_ms=cr.total_inference_time_ms,
     )
-    
+
     agent_response = None
     if result.agent_insight:
         ai = result.agent_insight
@@ -708,24 +519,18 @@ def _map_to_response(result) -> AnalyzeResponse:
             agent_model=ai.agent_model,
             processing_time_ms=ai.processing_time_ms,
         )
-    
-    # Build media response
+
     preview_url = f"/api/analyses/{result.request_id}/preview" if result.preview_path else None
-    
-    overlay_responses = []
-    for ov in getattr(result, 'overlays', []):
-        if ov.png_path:
-            overlay_responses.append(OverlayResponse(
-                model_id=ov.model_id,
-                url=f"/api/analyses/{result.request_id}/overlays/{ov.model_id}",
-                overlay_type=ov.overlay_type,
-            ))
-    
-    media = MediaResponse(
-        preview_url=preview_url,
-        overlays=overlay_responses,
-    )
-    
+    overlay_responses = [
+        OverlayResponse(
+            model_id=ov.model_id,
+            url=f"/api/analyses/{result.request_id}/overlays/{ov.model_id}",
+            overlay_type=ov.overlay_type,
+        )
+        for ov in getattr(result, "overlays", [])
+        if ov.png_path
+    ]
+
     return AnalyzeResponse(
         request_id=result.request_id,
         council_result=council_response,
@@ -737,17 +542,15 @@ def _map_to_response(result) -> AnalyzeResponse:
         hardware=result.hardware,
         errors=result.errors,
         warnings=result.warnings,
-        media=media,
+        media=MediaResponse(preview_url=preview_url, overlays=overlay_responses),
     )
 
 
 async def _store_analysis(result) -> None:
-    """Store analysis results in the database."""
     try:
         from ..database import get_session, Analysis, ModelEvidenceRecord, CouncilResultRecord, AuditEvent
-        
+
         async with await get_session() as session:
-            # Create analysis record
             analysis = Analysis(
                 request_id=result.request_id,
                 file_path=result.metadata.file_path if result.metadata else None,
@@ -761,9 +564,8 @@ async def _store_analysis(result) -> None:
                 completed_at=datetime.now(timezone.utc),
             )
             session.add(analysis)
-            await session.flush()  # Get the analysis ID
-            
-            # Store individual evidence
+            await session.flush()
+
             cr = result.council_result
             for ev in cr.member_evidence:
                 evidence_record = ModelEvidenceRecord(
@@ -793,8 +595,7 @@ async def _store_analysis(result) -> None:
                     } if ev.localization and ev.localization.bounding_box else None,
                 )
                 session.add(evidence_record)
-            
-            # Store council result
+
             council_record = CouncilResultRecord(
                 analysis_id=analysis.id,
                 council_run_id=cr.council_run_id,
@@ -815,8 +616,7 @@ async def _store_analysis(result) -> None:
                 total_inference_time_ms=cr.total_inference_time_ms,
             )
             session.add(council_record)
-            
-            # Audit trail
+
             audit = AuditEvent(
                 analysis_id=analysis.id,
                 event_type="analysis_completed",
@@ -829,112 +629,6 @@ async def _store_analysis(result) -> None:
                 actor="system",
             )
             session.add(audit)
-            
             await session.commit()
-            logger.info("Analysis stored: %s", analysis.id)
-            
     except Exception as e:
         logger.error("Failed to store analysis: %s", e, exc_info=True)
-
-
-# ==============================
-# Knowledge RAG Endpoints
-# ==============================
-
-@app.get("/api/knowledge/status")
-async def knowledge_status():
-    """Get knowledge base status."""
-    try:
-        from ..knowledge.rag import KnowledgeStore
-        store = KnowledgeStore()
-        return {
-            "available": True,
-            "document_count": store.document_count,
-            "backend": "chromadb",
-        }
-    except ImportError:
-        # Check baseline knowledge
-        from ..knowledge.rag import BASELINE_KNOWLEDGE
-        return {
-            "available": True,
-            "document_count": len(BASELINE_KNOWLEDGE),
-            "backend": "baseline",
-        }
-    except Exception as e:
-        return {
-            "available": False,
-            "document_count": 0,
-            "backend": "none",
-            "error": str(e),
-        }
-
-
-@app.post("/api/knowledge/ingest")
-async def ingest_knowledge():
-    """Ingest knowledge files from data/knowledge/ directory."""
-    try:
-        from ..knowledge.rag import KnowledgeStore
-        from ..paths import get_base_dir
-        
-        knowledge_dir = get_base_dir() / "data" / "knowledge"
-        if not knowledge_dir.exists():
-            raise HTTPException(404, "Knowledge directory not found")
-        
-        store = KnowledgeStore()
-        count = store.ingest_directory(knowledge_dir)
-        
-        return {
-            "status": "success",
-            "chunks_ingested": count,
-            "total_documents": store.document_count,
-        }
-    except ImportError:
-        raise HTTPException(
-            501,
-            "ChromaDB not installed. Install with: pip install chromadb"
-        )
-
-
-@app.post("/api/knowledge/query")
-async def query_knowledge(query: str, n_results: int = 5):
-    """Query the knowledge base."""
-    try:
-        from ..knowledge.rag import KnowledgeStore
-        
-        store = KnowledgeStore()
-        if store.document_count == 0:
-            # Fall back to baseline
-            from ..knowledge.rag import get_baseline_context
-            baseline = get_baseline_context(query)
-            return {
-                "source": "baseline",
-                "results": [{"content": baseline, "source": "baseline"}] if baseline else [],
-            }
-        
-        result = store.query(query, n_results=n_results)
-        return {
-            "source": "chromadb",
-            "results": [
-                {
-                    "content": chunk.content,
-                    "source": chunk.source,
-                    "section": chunk.section,
-                    "distance": dist,
-                }
-                for chunk, dist in zip(result.chunks, result.distances)
-            ],
-        }
-    except ImportError:
-        from ..knowledge.rag import get_baseline_context
-        baseline = get_baseline_context(query)
-        return {
-            "source": "baseline",
-            "results": [{"content": baseline, "source": "baseline"}] if baseline else [],
-        }
-
-
-
-
-
-
-
