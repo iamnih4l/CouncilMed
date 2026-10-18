@@ -58,7 +58,7 @@ export function MedicalImageViewer({
   imageUrl,
   overlayUrl,
   overlays = [],
-  fileName = '',
+  fileName: _fileName = '',
   imageShape,
   metadata,
   modality = 'Unknown',
@@ -314,7 +314,7 @@ export function MedicalImageViewer({
     ctx.filter = 'none';
     ctx.restore();
     _drawAnnotations(ctx);
-  }, [state, imageUrl, imageLoaded, overlayLoaded, fileName, imageShape, pixelValue, cursorPos, boxes, modality, anatomy, measurements, currentMeasurement]);
+  }, [state, imageUrl, imageLoaded, overlayLoaded, imageShape, boxes, modality, anatomy, measurements, currentMeasurement]);
 
   useEffect(() => {
     renderCanvas();
@@ -586,7 +586,7 @@ export function MedicalImageViewer({
                 {Object.entries(metadata).map(([key, value]) => (
                   <div key={key} className="flex flex-col">
                     <span className="text-[10px] text-zinc-600">{key}</span>
-                    <span className="text-[11px] text-zinc-300 font-mono truncate">{value}</span>
+                    <span className="text-[11px] text-zinc-300 font-mono truncate">{String(value)}</span>
                   </div>
                 ))}
               </div>
