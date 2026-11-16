@@ -48,7 +48,7 @@ interface MedicalImageViewerProps {
 
 const BACKEND_ORIGIN = import.meta.env.VITE_API_URL || 'http://127.0.0.1:8000';
 
-export function resolveMediaUrl(rawUrl: string): string {
+function resolveMediaUrl(rawUrl: string): string {
   if (
     rawUrl.startsWith('data:') ||
     rawUrl.startsWith('blob:') ||
