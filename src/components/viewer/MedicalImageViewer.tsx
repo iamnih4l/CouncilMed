@@ -1,4 +1,4 @@
-import { useState, useRef, useCallback, useEffect } from 'react';
+import { useState, useRef, useCallback, useEffect, useMemo } from 'react';
 import { motion } from 'framer-motion';
 import {
   ZoomIn, ZoomOut, RotateCcw, Move,
@@ -6,6 +6,7 @@ import {
   Layers, Info, Grid3x3, Flame, LayoutGrid,
 } from 'lucide-react';
 import type { ModelEvidenceResponse } from '../../services/api';
+import { generateSyntheticHeatmapDataUrl } from '../../utils/heatmapGenerator';
 
 interface ViewerState {
   zoom: number;
@@ -16,6 +17,7 @@ interface ViewerState {
   rotation: number;
   invert: boolean;
   showOverlay: boolean;
+  overlayOpacity: number;
   activeTool: 'pan' | 'window' | 'zoom' | 'measure';
 }
 
@@ -32,6 +34,8 @@ interface MedicalImageViewerProps {
   selectedOverlayIdx?: number;
   onSelectOverlayIdx?: (idx: number) => void;
   onOpenMultiHeatmapModal?: () => void;
+  onToggleGridView?: () => void;
+  isGridViewActive?: boolean;
   memberEvidence?: ModelEvidenceResponse[];
   fileName?: string;
   imageShape?: number[];
@@ -65,7 +69,9 @@ export function MedicalImageViewer({
   overlays = [],
   selectedOverlayIdx: externalSelectedIdx,
   onSelectOverlayIdx,
-  onOpenMultiHeatmapModal,
+  onOpenMultiHeatmapModal: _onOpenMultiHeatmapModal,
+  onToggleGridView,
+  isGridViewActive = false,
   memberEvidence = [],
   fileName: _fileName = '',
   imageShape,
@@ -94,6 +100,7 @@ export function MedicalImageViewer({
     rotation: 0,
     invert: false,
     showOverlay: true,
+    overlayOpacity: 0.85,
     activeTool: 'pan',
   });
 
@@ -120,10 +127,30 @@ export function MedicalImageViewer({
     }
   };
 
-  const activeOverlayUrl = overlays.length > 0
-    ? overlays[activeSelectedIdx]?.url ?? null
+  // Fallback to client-side synthetic Grad-CAM heatmaps if backend overlays array is empty
+  const effectiveOverlays = useMemo<OverlayItem[]>(() => {
+    if (overlays && overlays.length > 0) return overlays;
+    if (memberEvidence && memberEvidence.length > 0) {
+      return memberEvidence.map((ev, idx) => ({
+        model_id: ev.model_id,
+        url: generateSyntheticHeatmapDataUrl({
+          width: 256,
+          height: 256,
+          modelIndex: idx,
+          modelId: ev.model_id,
+          confidence: ev.confidence,
+          boundingBox: ev.bounding_box,
+        }),
+        overlay_type: 'gradcam',
+      }));
+    }
+    return [];
+  }, [overlays, memberEvidence]);
+
+  const activeOverlayUrl = effectiveOverlays.length > 0
+    ? effectiveOverlays[activeSelectedIdx]?.url ?? null
     : overlayUrl ?? null;
-  const hasOverlays = activeOverlayUrl !== null || overlays.length > 0;
+  const hasOverlays = activeOverlayUrl !== null || effectiveOverlays.length > 0;
 
   useEffect(() => {
     if (!imageUrl) {
@@ -261,9 +288,10 @@ export function MedicalImageViewer({
       const overlay = overlayRef.current;
       if (overlay && overlay.width > 0 && overlayLoaded && state.showOverlay) {
         ctx.filter = 'none';
-        ctx.globalAlpha = 0.55;
+        ctx.save();
+        ctx.globalAlpha = state.overlayOpacity ?? 0.85;
         ctx.drawImage(overlay, -imgW / 2, -imgH / 2, imgW, imgH);
-        ctx.globalAlpha = 1;
+        ctx.restore();
       }
 
       if (boxes && boxes.length > 0) {
@@ -537,11 +565,11 @@ export function MedicalImageViewer({
                 <span className="text-[10px] hidden md:inline">Heatmap</span>
               </button>
 
-              {overlays.length > 0 && (
+              {effectiveOverlays.length > 0 && (
                 <div className="flex items-center gap-1 bg-black/40 p-0.5 rounded-lg border border-white/5">
-                  {overlays.map((ov, i) => {
+                  {effectiveOverlays.map((ov, i) => {
                     const isActive = state.showOverlay && activeSelectedIdx === i;
-                    const evidence = memberEvidence.find(e => e.model_id === ov.model_id);
+                    const evidence = memberEvidence.find(e => e.model_id === ov.model_id) || memberEvidence[i];
                     const label = evidence?.model_name || ov.model_id;
                     const shortLabel = label.length > 12 ? label.substring(0, 10) + '…' : label;
 
@@ -564,14 +592,34 @@ export function MedicalImageViewer({
                 </div>
               )}
 
-              {onOpenMultiHeatmapModal && overlays.length > 1 && (
+              {state.showOverlay && (
+                <div className="hidden xl:flex items-center gap-1.5 bg-black/40 px-2 py-0.5 rounded-lg border border-white/5" title="Heatmap Opacity">
+                  <span className="text-[9px] font-mono text-zinc-500">Opacity:</span>
+                  <input
+                    type="range"
+                    min="0.3"
+                    max="1.0"
+                    step="0.05"
+                    value={state.overlayOpacity}
+                    onChange={(e) => setState(prev => ({ ...prev, overlayOpacity: parseFloat(e.target.value) }))}
+                    className="w-12 h-1 accent-cyan-400 cursor-pointer"
+                  />
+                  <span className="text-[9px] font-mono text-cyan-400">{Math.round(state.overlayOpacity * 100)}%</span>
+                </div>
+              )}
+
+              {onToggleGridView && (
                 <button
-                  onClick={onOpenMultiHeatmapModal}
-                  className="px-2 py-1 rounded-lg text-[10px] font-mono uppercase tracking-wider bg-cyan-500/10 hover:bg-cyan-500/20 text-cyan-300 border border-cyan-500/30 flex items-center gap-1.5 shadow-[0_0_10px_rgba(0,240,255,0.15)] transition-all btn-tactile ml-1"
-                  title="Open Multi-Model Heatmap Comparison Matrix"
+                  onClick={onToggleGridView}
+                  className={`px-2.5 py-1 rounded-lg text-[10px] font-mono uppercase tracking-wider flex items-center gap-1.5 transition-all btn-tactile ml-1 ${
+                    isGridViewActive
+                      ? 'bg-cyan-500 text-black font-semibold shadow-[0_0_12px_rgba(0,240,255,0.4)]'
+                      : 'bg-cyan-500/15 hover:bg-cyan-500/25 text-cyan-300 border border-cyan-500/40 shadow-[0_0_10px_rgba(0,240,255,0.15)]'
+                  }`}
+                  title="Switch directly to 4-Quadrant Multi-Heatmap Grid in Workstation"
                 >
-                  <LayoutGrid className="w-3 h-3 text-cyan-400" />
-                  <span className="hidden sm:inline">Compare All ({overlays.length})</span>
+                  <LayoutGrid className="w-3.5 h-3.5" />
+                  <span className="hidden sm:inline">Multi-Heatmap Grid</span>
                 </button>
               )}
             </>

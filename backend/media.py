@@ -149,9 +149,14 @@ def generate_gradcam_overlay_png(
     # Low-activation areas become transparent, high areas semi-opaque
     rgba = (colored[:, :, :3] * 255).astype(np.uint8)
 
-    # Alpha: scale by heatmap intensity for meaningful transparency
-    # Apply a power curve to make low-activation areas more transparent
-    alpha = (heatmap ** 1.2 * 200).clip(0, 200).astype(np.uint8)
+    # Alpha: scale by heatmap intensity for clinical transparency
+    # Background tissue (< 0.05) is transparent, focal ROIs ramp up to 230 for vivid visibility
+    norm_heat = np.clip(heatmap, 0.0, 1.0)
+    alpha = np.where(
+        norm_heat < 0.05,
+        0,
+        np.clip((norm_heat ** 0.85) * 225, 45, 230),
+    ).astype(np.uint8)
 
     # Stack into RGBA
     rgba_full = np.dstack([rgba, alpha])

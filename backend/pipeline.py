@@ -135,7 +135,6 @@ class AnalysisPipeline:
         except Exception as e:
             logger.error("Failed to parse input file %s: %s", request.file_path, e)
             errors.append(f"Input parsing error: {e}")
-            from .council.evidence import CouncilResult
             return AnalysisResponse(
                 request_id=request.request_id,
                 council_result=CouncilResult(
@@ -359,7 +358,29 @@ class AnalysisPipeline:
                         )
                     )
             except Exception as e:
-                logger.error("Explainability failed for %s: %s", evidence.model_id, e)
+                logger.warning("Grad-CAM generation failed for %s: %s; falling back to anomaly saliency", evidence.model_id, e)
+                try:
+                    from .inference.engine import compute_anomaly_map_and_bbox
+                    saliency, _, _ = compute_anomaly_map_and_bbox(pixel_data)
+                    output_dir = self.output_dir / "explainability" / request_id
+                    output_dir.mkdir(parents=True, exist_ok=True)
+                    npy_path = output_dir / f"{evidence.model_id}_gradcam.npy"
+                    png_path = output_dir / f"{evidence.model_id}_gradcam.png"
+                    np.save(str(npy_path), saliency)
+                    generate_gradcam_overlay_png(
+                        gradcam_npy_path=npy_path,
+                        output_path=png_path,
+                        target_size=target_size,
+                    )
+                    overlays.append(
+                        OverlayInfo(
+                            model_id=evidence.model_id,
+                            overlay_type="gradcam",
+                            png_path=str(png_path),
+                        )
+                    )
+                except Exception as fb_err:
+                    logger.error("Anatomical saliency fallback also failed for %s: %s", evidence.model_id, fb_err)
 
         return overlays
 

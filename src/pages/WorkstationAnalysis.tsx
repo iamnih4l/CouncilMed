@@ -14,13 +14,15 @@ import { useNavigate } from 'react-router-dom';
 import {
   Upload, FileImage, AlertCircle, ChevronRight,
   RotateCcw, Info,
-  Bot, Sparkles, Brain, FileText, X, ExternalLink, Loader2
+  Bot, Sparkles, Brain, FileText, X, ExternalLink, Loader2,
+  LayoutGrid, Square,
 } from 'lucide-react';
 import { HudPanel } from '../components/ui/HudPanel';
 import { WorkspaceEnvironment } from '../components/3d/WorkspaceEnvironment';
 import { CouncilEvidencePanel } from '../components/council/CouncilEvidencePanel';
 import { MedicalImageViewer } from '../components/viewer/MedicalImageViewer';
 import { MultiHeatmapModal } from '../components/viewer/MultiHeatmapModal';
+import { MultiHeatmapGrid } from '../components/viewer/MultiHeatmapGrid';
 import { useCouncilAnalysis } from '../hooks/useCouncilAnalysis';
 import { api, API_BASE } from '../services/api';
 import { ReportViewer } from './Reports';
@@ -126,6 +128,7 @@ export default function WorkstationAnalysis() {
   const [reportError, setReportError] = useState<string | null>(null);
   const [isHeatmapModalOpen, setIsHeatmapModalOpen] = useState(false);
   const [selectedOverlayIdx, setSelectedOverlayIdx] = useState(0);
+  const [workstationView, setWorkstationView] = useState<'single' | 'grid'>('single');
   const fileInputRef = useRef<HTMLInputElement>(null);
   const previewUrlRef = useRef<string | null>(null);
 
@@ -139,8 +142,14 @@ export default function WorkstationAnalysis() {
     const idx = overlays.findIndex(ov => ov.model_id === modelId);
     if (idx !== -1) {
       setSelectedOverlayIdx(idx);
+    } else {
+      const evIdx = analysis.result?.council_result?.member_evidence?.findIndex(e => e.model_id === modelId);
+      if (evIdx !== undefined && evIdx !== -1) {
+        setSelectedOverlayIdx(evIdx);
+      }
     }
-  }, [analysis.result?.media?.overlays]);
+    setWorkstationView('single');
+  }, [analysis.result?.media?.overlays, analysis.result?.council_result?.member_evidence]);
 
   const setPreviewFromFile = useCallback((file: File) => {
     if (previewUrlRef.current) {
@@ -383,50 +392,98 @@ export default function WorkstationAnalysis() {
                 </div>
               )}
 
-              {/* New Image button */}
-              <div className="absolute top-2 right-2 z-20">
-                <button
-                  onClick={handleNewImage}
-                  className="flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-medium
-                    bg-black/60 text-zinc-400 hover:bg-black/80 hover:text-white transition-all backdrop-blur-sm"
-                >
-                  <Upload className="w-3.5 h-3.5" /> New Image
-                </button>
-                <input
-                  ref={fileInputRef}
-                  type="file"
-                  accept=".dcm,.dicom,.nii,.gz,.jpg,.jpeg,.png,.bmp,.tiff"
-                  className="hidden"
-                  onChange={handleFileSelect}
-                />
+              {/* Top Viewport Controls */}
+              <div className="absolute top-2 left-2 right-2 z-20 flex items-center justify-between pointer-events-none">
+                {/* View Switcher: Single View vs Multi-Heatmap Grid */}
+                <div className="flex items-center bg-black/80 backdrop-blur-md border border-white/10 rounded-lg p-0.5 shadow-xl pointer-events-auto">
+                  <button
+                    onClick={() => setWorkstationView('single')}
+                    className={`px-2.5 py-1 rounded text-xs font-mono uppercase tracking-wider flex items-center gap-1.5 transition-all ${
+                      workstationView === 'single'
+                        ? 'bg-cyan-500/20 text-cyan-300 border border-cyan-400/40 shadow-[0_0_8px_rgba(0,240,255,0.25)]'
+                        : 'text-zinc-400 hover:text-white hover:bg-white/5'
+                    }`}
+                    title="Single High-Resolution PACS Viewer"
+                  >
+                    <Square className="w-3 h-3" />
+                    <span>Single</span>
+                  </button>
+                  <button
+                    onClick={() => setWorkstationView('grid')}
+                    className={`px-2.5 py-1 rounded text-xs font-mono uppercase tracking-wider flex items-center gap-1.5 transition-all ${
+                      workstationView === 'grid'
+                        ? 'bg-cyan-500/20 text-cyan-300 border border-cyan-400/40 shadow-[0_0_8px_rgba(0,240,255,0.25)]'
+                        : 'text-zinc-400 hover:text-white hover:bg-white/5'
+                    }`}
+                    title="4-Quadrant Multi-Heatmap Matrix"
+                  >
+                    <LayoutGrid className="w-3 h-3 text-cyan-400" />
+                    <span>Multi-Heatmap Grid</span>
+                  </button>
+                </div>
+
+                {/* New Image button */}
+                <div className="pointer-events-auto">
+                  <button
+                    onClick={handleNewImage}
+                    className="flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-medium
+                      bg-black/80 text-zinc-300 hover:bg-black hover:text-white transition-all backdrop-blur-md border border-white/10 shadow-lg"
+                  >
+                    <Upload className="w-3.5 h-3.5" /> New Image
+                  </button>
+                  <input
+                    ref={fileInputRef}
+                    type="file"
+                    accept=".dcm,.dicom,.nii,.gz,.jpg,.jpeg,.png,.bmp,.tiff"
+                    className="hidden"
+                    onChange={handleFileSelect}
+                  />
+                </div>
               </div>
 
-              <HudPanel className="flex-1 flex flex-col p-0 overflow-hidden">
-                <MedicalImageViewer
-                  imageUrl={imagePreview}
-                  fileName={fileName}
-                  modality={analysis.result?.modality ?? selectedModality.split(' ').slice(1).join(' ')}
-                  anatomy={analysis.result?.anatomy ?? selectedModality.split(' ')[0]}
-                  imageShape={analysis.result?.image_shape}
-                  metadata={analysis.result ? {
-                    'Modality': analysis.result.modality,
-                    'Anatomy': analysis.result.anatomy,
-                    'Image Shape': analysis.result.image_shape.join(' × '),
-                    'Device': (analysis.result.hardware?.device as string) || 'cpu',
-                    'Total Time': `${analysis.result.total_time_ms.toFixed(0)}ms`,
-                    'Models Used': `${analysis.result.council_result.models_total}`,
-                  } : undefined}
-                  boxes={analysis.result?.council_result.member_evidence
-                    ?.map(e => e.bounding_box)
-                    .filter((b): b is NonNullable<typeof b> => b != null)
-                  }
-                  overlays={activeOverlays}
-                  selectedOverlayIdx={selectedOverlayIdx}
-                  onSelectOverlayIdx={setSelectedOverlayIdx}
-                  onOpenMultiHeatmapModal={() => setIsHeatmapModalOpen(true)}
-                  memberEvidence={analysis.result?.council_result.member_evidence}
-                  className="flex-1"
-                />
+              <HudPanel className="flex-1 flex flex-col p-0 overflow-hidden pt-11">
+                {workstationView === 'grid' ? (
+                  <MultiHeatmapGrid
+                    imageUrl={imagePreview}
+                    overlays={activeOverlays}
+                    memberEvidence={analysis.result?.council_result.member_evidence}
+                    selectedOverlayIdx={selectedOverlayIdx}
+                    onSelectOverlay={setSelectedOverlayIdx}
+                    onFocusSingleView={(idx) => {
+                      if (idx >= 0) setSelectedOverlayIdx(idx);
+                      setWorkstationView('single');
+                    }}
+                    className="flex-1"
+                  />
+                ) : (
+                  <MedicalImageViewer
+                    imageUrl={imagePreview}
+                    fileName={fileName}
+                    modality={analysis.result?.modality ?? selectedModality.split(' ').slice(1).join(' ')}
+                    anatomy={analysis.result?.anatomy ?? selectedModality.split(' ')[0]}
+                    imageShape={analysis.result?.image_shape}
+                    metadata={analysis.result ? {
+                      'Modality': analysis.result.modality,
+                      'Anatomy': analysis.result.anatomy,
+                      'Image Shape': analysis.result.image_shape.join(' × '),
+                      'Device': (analysis.result.hardware?.device as string) || 'cpu',
+                      'Total Time': `${analysis.result.total_time_ms.toFixed(0)}ms`,
+                      'Models Used': `${analysis.result.council_result.models_total}`,
+                    } : undefined}
+                    boxes={analysis.result?.council_result.member_evidence
+                      ?.map(e => e.bounding_box)
+                      .filter((b): b is NonNullable<typeof b> => b != null)
+                    }
+                    overlays={activeOverlays}
+                    selectedOverlayIdx={selectedOverlayIdx}
+                    onSelectOverlayIdx={setSelectedOverlayIdx}
+                    onToggleGridView={() => setWorkstationView('grid')}
+                    isGridViewActive={false}
+                    onOpenMultiHeatmapModal={() => setIsHeatmapModalOpen(true)}
+                    memberEvidence={analysis.result?.council_result.member_evidence}
+                    className="flex-1"
+                  />
+                )}
               </HudPanel>
             </div>
           )}
@@ -472,7 +529,7 @@ export default function WorkstationAnalysis() {
                 onReview={handleReview}
                 reviewStatus={reviewStatus}
                 onSelectModelHeatmap={handleSelectModelHeatmap}
-                onOpenMultiHeatmapModal={() => setIsHeatmapModalOpen(true)}
+                onOpenMultiHeatmapModal={() => setWorkstationView('grid')}
               />
 
               {/* View Report Button */}
