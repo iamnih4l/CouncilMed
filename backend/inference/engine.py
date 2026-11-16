@@ -196,6 +196,14 @@ def compute_anomaly_map_and_bbox(
             y_max=float(min(height - margin_y, py + half_h)),
         )
 
+    if best_bbox is not None:
+        best_bbox = BoundingBox(
+            x_min=float(max(0.0, min(float(width - 16), best_bbox.x_min))),
+            y_min=float(max(0.0, min(float(height - 16), best_bbox.y_min))),
+            x_max=float(max(best_bbox.x_min + 16, min(float(width), best_bbox.x_max))),
+            y_max=float(max(best_bbox.y_min + 16, min(float(height), best_bbox.y_max))),
+        )
+
     return saliency, best_bbox, {
         "focal_score": focal_score,
         "asymmetry": asymmetry_score,
@@ -352,7 +360,13 @@ def _calibrate_probabilities_with_biomarkers(
     asym = biomarkers.get("asymmetry", 0.0)
     contrast = biomarkers.get("contrast", 0.1)
 
-    abnormality_signal = np.clip((focal * 1.45 + asym * 3.8 + max(0.0, contrast - 0.12) * 1.2), 0.0, 1.0)
+    is_brain_mri = any("glioblastoma" in c.lower() or "pituitary" in c.lower() for c in class_names)
+    is_chest_xray = any("pneumonia" in c.lower() or "pneumothorax" in c.lower() for c in class_names)
+    is_chest_ct = any("pulmonary nodule" in c.lower() or "ground-glass" in c.lower() for c in class_names)
+
+    # For chest radiographs / CT, subtract expected normal cardiomediastinal asymmetry
+    asym_eff = max(0.0, asym - 0.065) if (is_chest_xray or is_chest_ct) else asym
+    abnormality_signal = np.clip((focal * 1.45 + asym_eff * 3.8 + max(0.0, contrast - 0.12) * 1.2), 0.0, 1.0)
 
     normal_idx = None
     for idx, name in enumerate(class_names):
@@ -362,8 +376,9 @@ def _calibrate_probabilities_with_biomarkers(
 
     calibrated = raw_probs.copy()
     if normal_idx is not None and num_classes > 1:
-        if abnormality_signal < 0.22 and bbox is None:
-            calibrated[normal_idx] += 0.65
+        # If abnormality signal is low or focal bounding box is absent in clear scan, preserve Normal
+        if abnormality_signal < 0.28 or (bbox is None and abnormality_signal < 0.40):
+            calibrated[normal_idx] += 0.55
         else:
             calibrated[normal_idx] *= max(0.08, 1.0 - abnormality_signal * 1.15)
             pathology_indices = [i for i in range(num_classes) if i != normal_idx]
@@ -371,12 +386,9 @@ def _calibrate_probabilities_with_biomarkers(
             cx = (bbox.x_min + bbox.x_max) / (2.0 * w) if bbox else 0.5
             cy = (bbox.y_min + bbox.y_max) / (2.0 * h) if bbox else 0.5
 
-            # Anatomical prior discernment for Brain MRI (Sellar/Suprasellar vs Hemispheric vs Dural)
-            is_brain_mri = any("glioblastoma" in c.lower() or "pituitary" in c.lower() for c in class_names)
             if is_brain_mri and bbox is not None:
-                # Sellar / suprasellar midline lesion: classic pituitary fossa footprint
+                # Brain MRI anatomical priors (Pituitary Sellar vs Glioblastoma Hemispheric vs Meningioma Dural)
                 is_sellar_pituitary = (0.40 <= cx <= 0.60) and (0.50 <= cy <= 0.75) and (asym < 0.09)
-                # Lateral hemispheric mass: characteristic of infiltrative cerebral glioma / glioblastoma
                 is_lateral = abs(cx - 0.50) > 0.12 or asym > 0.08
 
                 for p_idx in pathology_indices:
@@ -389,9 +401,49 @@ def _calibrate_probabilities_with_biomarkers(
                         calibrated[p_idx] += 0.30
                     else:
                         calibrated[p_idx] += abnormality_signal * 0.15
+
+            elif is_chest_xray and bbox is not None:
+                # Chest X-Ray anatomical priors:
+                # Pleural Effusion: Basal fluid meniscus at lung bases / costophrenic sulcus (cy >= 0.58)
+                is_basal_effusion = cy >= 0.58
+                # Pneumothorax: Apical / superior or peripheral visceral pleural margin (cy <= 0.45 or far lateral)
+                is_apical_pneumothorax = (cy <= 0.45) or (abs(cx - 0.50) >= 0.28)
+                # Pneumonia: Mid-lung alveolar patchy consolidation
+                is_consolidation_pneumonia = (0.35 <= cy <= 0.75) and (focal >= 0.25)
+
+                for p_idx in pathology_indices:
+                    cname = class_names[p_idx].lower()
+                    if "pleural effusion" in cname and is_basal_effusion:
+                        calibrated[p_idx] += 0.42
+                    elif "pneumothorax" in cname and is_apical_pneumothorax:
+                        calibrated[p_idx] += 0.42
+                    elif "pneumonia" in cname and is_consolidation_pneumonia:
+                        calibrated[p_idx] += 0.38
+                    else:
+                        calibrated[p_idx] += abnormality_signal * 0.15
+
+            elif is_chest_ct and bbox is not None:
+                # Chest CT anatomical priors:
+                # Ground-Glass Opacity: Diffuse low-density opacity across wide parenchymal field
+                is_diffuse_ggo = focal < 0.26 and (bbox.x_max - bbox.x_min) > w * 0.22
+                # Pulmonary Nodule: Compact focal high-gradient opacity
+                is_focal_nodule = focal >= 0.26 and (bbox.x_max - bbox.x_min) <= w * 0.26
+                # Pulmonary Embolism: Central vascular / hilar arborization
+                is_central_pe = (0.35 <= cx <= 0.65) and (0.35 <= cy <= 0.65)
+
+                for p_idx in pathology_indices:
+                    cname = class_names[p_idx].lower()
+                    if "ground-glass" in cname and is_diffuse_ggo:
+                        calibrated[p_idx] += 0.40
+                    elif "nodule" in cname and is_focal_nodule:
+                        calibrated[p_idx] += 0.38
+                    elif "embolism" in cname and is_central_pe:
+                        calibrated[p_idx] += 0.32
+                    else:
+                        calibrated[p_idx] += abnormality_signal * 0.15
             else:
                 for p_idx in pathology_indices:
-                    calibrated[p_idx] += abnormality_signal * 0.25
+                    calibrated[p_idx] += abnormality_signal * 0.20
 
     calibrated = np.maximum(calibrated, 0.005)
     calibrated = calibrated / calibrated.sum()

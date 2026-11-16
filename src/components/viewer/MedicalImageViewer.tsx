@@ -297,14 +297,24 @@ export function MedicalImageViewer({
       if (boxes && boxes.length > 0) {
         ctx.filter = 'none';
         const glowIntensity = 0.55 + 0.45 * Math.sin(glowPhaseRef.current);
-        const imgNatW = img.naturalWidth || img.width;
-        const imgNatH = img.naturalHeight || img.height;
+        const coordW = (imageShape && imageShape.length >= 2 && imageShape[1] > 0)
+          ? imageShape[1]
+          : (img.naturalWidth || img.width);
+        const coordH = (imageShape && imageShape.length >= 2 && imageShape[0] > 0)
+          ? imageShape[0]
+          : (img.naturalHeight || img.height);
 
         boxes.forEach((box) => {
-          const mappedX = -imgW / 2 + (box.x / imgNatW) * imgW;
-          const mappedY = -imgH / 2 + (box.y / imgNatH) * imgH;
-          const mappedW = (box.width / imgNatW) * imgW;
-          const mappedH = (box.height / imgNatH) * imgH;
+          // Strictly normalize against reference coordinate space and clamp inside [0, 1]
+          const normX = Math.max(0, Math.min(0.98, box.x / coordW));
+          const normY = Math.max(0, Math.min(0.98, box.y / coordH));
+          const normW = Math.max(0.02, Math.min(1.0 - normX, box.width / coordW));
+          const normH = Math.max(0.02, Math.min(1.0 - normY, box.height / coordH));
+
+          const mappedX = -imgW / 2 + normX * imgW;
+          const mappedY = -imgH / 2 + normY * imgH;
+          const mappedW = normW * imgW;
+          const mappedH = normH * imgH;
 
           ctx.save();
           ctx.shadowColor = `rgba(0, 240, 255, ${0.35 + glowIntensity * 0.45})`;
