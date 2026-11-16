@@ -43,6 +43,7 @@ from .evidence import (
     ModelStatus,
     SeverityLevel,
     LocalizationData,
+    BoundingBox,
 )
 
 logger = logging.getLogger(__name__)
@@ -318,8 +319,41 @@ def compute_spatial_agreement(
     else:
         consensus_center = tuple(np.mean(centers, axis=0))
     
+    # Consensus bounding box: confidence-weighted average of valid member bounding boxes
+    boxes = [loc.bounding_box for loc in localizations if loc.bounding_box is not None]
+    consensus_bbox = None
+    if boxes:
+        box_weights = [loc.confidence for loc in localizations if loc.bounding_box is not None]
+        sum_bw = sum(box_weights)
+        if sum_bw > 0:
+            c_xmin = sum(b.x_min * w for b, w in zip(boxes, box_weights)) / sum_bw
+            c_ymin = sum(b.y_min * w for b, w in zip(boxes, box_weights)) / sum_bw
+            c_xmax = sum(b.x_max * w for b, w in zip(boxes, box_weights)) / sum_bw
+            c_ymax = sum(b.y_max * w for b, w in zip(boxes, box_weights)) / sum_bw
+        else:
+            c_xmin = float(np.mean([b.x_min for b in boxes]))
+            c_ymin = float(np.mean([b.y_min for b in boxes]))
+            c_xmax = float(np.mean([b.x_max for b in boxes]))
+            c_ymax = float(np.mean([b.y_max for b in boxes]))
+
+        consensus_bbox = BoundingBox(
+            x_min=float(round(c_xmin, 1)),
+            y_min=float(round(c_ymin, 1)),
+            x_max=float(round(c_xmax, 1)),
+            y_max=float(round(c_ymax, 1)),
+            slice_idx=boxes[0].slice_idx,
+        )
+
+    consensus_voxel = (
+        (consensus_bbox.x_min + consensus_bbox.x_max) / 2.0 if consensus_bbox else consensus_center[0] * 2.0,
+        (consensus_bbox.y_min + consensus_bbox.y_max) / 2.0 if consensus_bbox else consensus_center[1] * 2.0,
+        0.0,
+    )
+
     consensus_loc = LocalizationData(
+        center_voxel=consensus_voxel,
         center_world_mm=consensus_center,
+        bounding_box=consensus_bbox,
         confidence=spatial_agreement,
     )
     

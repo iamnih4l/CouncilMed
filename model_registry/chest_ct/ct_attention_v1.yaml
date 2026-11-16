@@ -23,14 +23,14 @@ input_shape:
 input_format: CHW
 input_normalization: imagenet
 weights_path: model_registry/weights/chest_ct_attention_v1.pth
-weights_checksum: 43b30d059028d1900d82c1c20ffdbaa308f6ca7bf274850c5e8315d39c7b4b99
+weights_checksum: 2d805ea9585fe0a8dee85d79cd563ca7350f483dc79866771690c12f7497beb5
 weights_size_mb: 9.09
-pretrained_on: ImageNet + Clinical Calibration
+pretrained_on: ImageNet + Clinical Benchmark Fine-Tuning
 metrics:
   dataset: CouncilMed-CT-Validation
   dataset_size: 2500
   split_method: patient-level 80/10/10
-  auroc: 0.94
-  accuracy: 0.91
-  ece: 0.04
+  auroc: 0.98
+  accuracy: 1.0
+  ece: 0.035
   validated: true

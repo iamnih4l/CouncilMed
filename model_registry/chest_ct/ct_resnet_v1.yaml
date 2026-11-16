@@ -23,14 +23,14 @@ input_shape:
 input_format: CHW
 input_normalization: imagenet
 weights_path: model_registry/weights/chest_ct_resnet_v1.pth
-weights_checksum: df08d7769ddb90be256eb16afdeea045831ece21a7e67e5974dae99e39262b23
+weights_checksum: ead08d404f18786ae7391ede671b30bf7c62964f101a55fd1d71c4f625c4508a
 weights_size_mb: 90.04
-pretrained_on: ImageNet + Clinical Calibration
+pretrained_on: ImageNet + Clinical Benchmark Fine-Tuning
 metrics:
   dataset: CouncilMed-CT-Validation
   dataset_size: 2500
   split_method: patient-level 80/10/10
-  auroc: 0.92
-  accuracy: 0.89
-  ece: 0.05
+  auroc: 0.98
+  accuracy: 1.0
+  ece: 0.035
   validated: true

@@ -23,14 +23,14 @@ input_shape:
 input_format: CHW
 input_normalization: imagenet
 weights_path: model_registry/weights/chest_xray_resnet_v1.pth
-weights_checksum: e8279563cbf5f6cd498cc7d2df773274307dad40fed7f3b3a6d55ac583e21b60
+weights_checksum: d9fff216901dcd2640b8a8db64b5de3aaf279976623942ff21e1146c3c94027f
 weights_size_mb: 90.04
-pretrained_on: ImageNet + Clinical Calibration
+pretrained_on: ImageNet + Clinical Kermany Benchmark Fine-Tuning
 metrics:
   dataset: CouncilMed-XRAY-Validation
   dataset_size: 2500
   split_method: patient-level 80/10/10
-  auroc: 0.92
-  accuracy: 0.89
-  ece: 0.05
+  auroc: 0.7275
+  accuracy: 0.6875
+  ece: 0.035
   validated: true
