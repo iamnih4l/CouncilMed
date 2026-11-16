@@ -32,11 +32,8 @@ def main():
     # 1. Ask for Hugging Face Username / Repo
     repo_id = os.environ.get("HF_REPO_ID")
     if not repo_id:
-        repo_input = input("Enter your Hugging Face Space ID (e.g., username/councilmed-backend): ").strip()
-        if not repo_input:
-            print("Operation cancelled: Space ID is required.")
-            sys.exit(0)
-        repo_id = repo_input
+        repo_input = input("Enter your Hugging Face Space ID [default: Mohammed12345678/CouncilAI]: ").strip()
+        repo_id = repo_input if repo_input else "Mohammed12345678/CouncilAI"
 
     # 2. Ask for Hugging Face Token (with WRITE permission)
     token = os.environ.get("HF_TOKEN")

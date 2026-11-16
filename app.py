@@ -245,10 +245,14 @@ with gr.Blocks(title="CouncilMed — Medical AI Workstation") as demo:
         """
     )
 
-# Initialize SQLite database
+# Initialize SQLite database and link pipeline to FastAPI
 import asyncio
 from backend.database import init_database
 from fastapi.middleware.cors import CORSMiddleware
+import backend.api.app as api_module
+
+# Ensure FastAPI endpoints have immediate access to the pipeline and models
+api_module._pipeline = pipeline
 
 try:
     asyncio.run(init_database())
@@ -265,9 +269,9 @@ demo.app.add_middleware(
 )
 
 # Attach all CouncilMed FastAPI routes directly onto Gradio
-# This powers the Vercel frontend (/api/health, /api/analyze/upload, /api/models, etc.)
+# This powers the Vercel frontend (/gradio_api/api/health, /gradio_api/api/models, /api/analyze/upload, etc.)
 demo.app.include_router(fastapi_app.router, prefix="/gradio_api")
 demo.app.include_router(fastapi_app.router)
 
 if __name__ == "__main__":
-    demo.launch(show_error=True)
+    demo.launch(show_error=True, _app=demo.app)
