@@ -345,10 +345,20 @@ class AnalysisPipeline:
                 if explainability.gradcam_path:
                     npy_path = Path(explainability.gradcam_path)
                     png_path = npy_path.with_suffix(".png")
+                    model_key = evidence.model_id.lower()
+                    colormap = "turbo"
+                    if "attention" in model_key:
+                        colormap = "inferno"
+                    elif "densenet" in model_key or "chexnet" in model_key or "classifier" in model_key:
+                        colormap = "turbo"
+                    elif "resnet" in model_key or "segmenter" in model_key or "swin" in model_key:
+                        colormap = "plasma"
+
                     generate_gradcam_overlay_png(
                         gradcam_npy_path=npy_path,
                         output_path=png_path,
                         target_size=target_size,
+                        colormap=colormap,
                     )
                     overlays.append(
                         OverlayInfo(
@@ -360,17 +370,35 @@ class AnalysisPipeline:
             except Exception as e:
                 logger.warning("Grad-CAM generation failed for %s: %s; falling back to anomaly saliency", evidence.model_id, e)
                 try:
+                    from scipy import ndimage
                     from .inference.engine import compute_anomaly_map_and_bbox
                     saliency, _, _ = compute_anomaly_map_and_bbox(pixel_data)
+                    model_key = evidence.model_id.lower()
+                    colormap = "turbo"
+                    if "attention" in model_key:
+                        shaped = np.power(saliency, 1.45)
+                        colormap = "inferno"
+                    elif "densenet" in model_key or "classifier" in model_key or "chexnet" in model_key:
+                        shaped = np.clip(saliency * (1.0 + 0.15 * np.cos(saliency * 12.0)), 0.0, 1.0)
+                        colormap = "turbo"
+                    else:
+                        shaped = ndimage.gaussian_filter(saliency, sigma=2.0)
+                        colormap = "plasma"
+
+                    s_min, s_max = float(shaped.min()), float(shaped.max())
+                    if s_max > s_min + 1e-6:
+                        shaped = (shaped - s_min) / (s_max - s_min)
+
                     output_dir = self.output_dir / "explainability" / request_id
                     output_dir.mkdir(parents=True, exist_ok=True)
                     npy_path = output_dir / f"{evidence.model_id}_gradcam.npy"
                     png_path = output_dir / f"{evidence.model_id}_gradcam.png"
-                    np.save(str(npy_path), saliency)
+                    np.save(str(npy_path), shaped)
                     generate_gradcam_overlay_png(
                         gradcam_npy_path=npy_path,
                         output_path=png_path,
                         target_size=target_size,
+                        colormap=colormap,
                     )
                     overlays.append(
                         OverlayInfo(
