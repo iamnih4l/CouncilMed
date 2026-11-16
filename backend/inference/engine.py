@@ -264,8 +264,13 @@ def load_pytorch_model(manifest: ModelManifest) -> Any:
     num_classes = manifest.num_classes or len(manifest.class_names) or 4
     arch_name = getattr(manifest, "architecture", "")
 
+    target_device = DEVICE
     if weights_path.exists():
-        loaded = torch.load(weights_path, map_location=DEVICE, weights_only=False)
+        try:
+            loaded = torch.load(weights_path, map_location=target_device, weights_only=False)
+        except Exception:
+            target_device = "cpu"
+            loaded = torch.load(weights_path, map_location="cpu", weights_only=False)
         if isinstance(loaded, dict):
             arch_cls = getattr(arch_module, arch_name, arch_module.CouncilDenseNetClassifier)
             model = arch_cls(num_classes=num_classes)
@@ -282,7 +287,10 @@ def load_pytorch_model(manifest: ModelManifest) -> Any:
         torch.save(model, weights_path)
 
     model.eval()
-    model.to(DEVICE)
+    try:
+        model.to(target_device)
+    except Exception:
+        model.to("cpu")
     _model_cache[model_key] = model
     return model
 
@@ -475,10 +483,19 @@ def _run_pytorch_inference(
     import torch
 
     model = load_pytorch_model(manifest)
-    tensor = torch.from_numpy(batch).to(DEVICE)
-
-    with torch.no_grad():
-        output = model(tensor)
+    
+    # Run on active device; if CUDA lease is not granted (e.g. ZeroGPU without decorator), fall back to CPU
+    try:
+        dev = next(model.parameters()).device
+        tensor = torch.from_numpy(batch).to(dev)
+        with torch.no_grad():
+            output = model(tensor)
+    except Exception as e:
+        logger.warning("Inference on %s failed (%s), smoothly falling back to CPU", DEVICE, e)
+        model = model.to("cpu")
+        tensor = torch.from_numpy(batch).to("cpu")
+        with torch.no_grad():
+            output = model(tensor)
 
     spatial_map = None
     if isinstance(output, tuple):

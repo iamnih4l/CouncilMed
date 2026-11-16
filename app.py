@@ -52,6 +52,13 @@ pipeline = AnalysisPipeline(
     output_dir=BASE_DIR / "output",
 )
 
+# Enable ZeroGPU for pipeline analysis calls (for FastAPI & Gradio)
+try:
+    if hasattr(spaces, "GPU"):
+        pipeline.analyze = spaces.GPU(duration=30)(pipeline.analyze)
+except Exception as e:
+    logger.warning("Could not wrap pipeline.analyze with spaces.GPU: %s", e)
+
 
 @spaces.GPU(duration=30)
 def run_council_inference(image_input: str | None, modality_override: str):

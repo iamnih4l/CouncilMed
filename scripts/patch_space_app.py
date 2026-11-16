@@ -39,6 +39,17 @@ try:
         repo_type="space",
         commit_message="Fix: mount FastAPI router onto Gradio server with _app=demo.app and inject pipeline",
     )
+    print("  ✓ app.py uploaded!")
+
+    engine_path = BASE_DIR / "backend" / "inference" / "engine.py"
+    api.upload_file(
+        path_or_fileobj=str(engine_path),
+        path_in_repo="backend/inference/engine.py",
+        repo_id=repo_id,
+        repo_type="space",
+        commit_message="Fix: resilient ZeroGPU device fallback and pipeline GPU decorator",
+    )
+    print("  ✓ engine.py uploaded!")
     print("\n" + "=" * 60)
     print("  ✓ SUCCESS: app.py uploaded to Hugging Face Space!")
     print("=" * 60)
