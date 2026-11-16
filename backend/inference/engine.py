@@ -362,19 +362,36 @@ def _calibrate_probabilities_with_biomarkers(
 
     calibrated = raw_probs.copy()
     if normal_idx is not None and num_classes > 1:
-        if abnormality_signal < 0.24 and bbox is None:
+        if abnormality_signal < 0.22 and bbox is None:
             calibrated[normal_idx] += 0.65
         else:
             calibrated[normal_idx] *= max(0.08, 1.0 - abnormality_signal * 1.15)
             pathology_indices = [i for i in range(num_classes) if i != normal_idx]
             h, w = image_shape[0], image_shape[1]
-            rel_area = 0.05
-            if bbox is not None:
-                rel_area = ((bbox.x_max - bbox.x_min) * (bbox.y_max - bbox.y_min)) / max(1.0, float(h * w))
+            cx = (bbox.x_min + bbox.x_max) / (2.0 * w) if bbox else 0.5
+            cy = (bbox.y_min + bbox.y_max) / (2.0 * h) if bbox else 0.5
 
-            for rank_i, p_idx in enumerate(pathology_indices):
-                morph_boost = (abnormality_signal * 0.55) if rank_i == 0 else (rel_area * 1.8)
-                calibrated[p_idx] = calibrated[p_idx] * 1.4 + morph_boost
+            # Anatomical prior discernment for Brain MRI (Sellar/Suprasellar vs Hemispheric vs Dural)
+            is_brain_mri = any("glioblastoma" in c.lower() or "pituitary" in c.lower() for c in class_names)
+            if is_brain_mri and bbox is not None:
+                # Sellar / suprasellar midline lesion: classic pituitary fossa footprint
+                is_sellar_pituitary = (0.40 <= cx <= 0.60) and (0.50 <= cy <= 0.75) and (asym < 0.09)
+                # Lateral hemispheric mass: characteristic of infiltrative cerebral glioma / glioblastoma
+                is_lateral = abs(cx - 0.50) > 0.12 or asym > 0.08
+
+                for p_idx in pathology_indices:
+                    cname = class_names[p_idx].lower()
+                    if "pituitary" in cname and is_sellar_pituitary:
+                        calibrated[p_idx] += 0.45
+                    elif "glioblastoma" in cname and is_lateral:
+                        calibrated[p_idx] += 0.35
+                    elif "meningioma" in cname and (cx < 0.35 or cx > 0.65):
+                        calibrated[p_idx] += 0.30
+                    else:
+                        calibrated[p_idx] += abnormality_signal * 0.15
+            else:
+                for p_idx in pathology_indices:
+                    calibrated[p_idx] += abnormality_signal * 0.25
 
     calibrated = np.maximum(calibrated, 0.005)
     calibrated = calibrated / calibrated.sum()
