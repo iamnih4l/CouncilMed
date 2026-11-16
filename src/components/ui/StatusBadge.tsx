@@ -11,27 +11,31 @@ interface StatusBadgeProps extends React.HTMLAttributes<HTMLDivElement> {
 
 const statusConfig = {
   critical: {
-    color: 'text-[var(--color-accent-ruby)]',
-    bg: 'bg-[var(--color-accent-ruby)]/10',
-    border: 'border-[var(--color-accent-ruby)]/20',
+    color: 'text-red-400',
+    bg: 'bg-red-500/10',
+    border: 'border-red-500/30',
+    glow: 'shadow-[0_0_12px_rgba(239,68,68,0.2)]',
     icon: AlertTriangle,
   },
   warning: {
-    color: 'text-[var(--color-accent-amber)]',
-    bg: 'bg-[var(--color-accent-amber)]/10',
-    border: 'border-[var(--color-accent-amber)]/20',
+    color: 'text-amber-400',
+    bg: 'bg-amber-500/10',
+    border: 'border-amber-500/30',
+    glow: 'shadow-[0_0_12px_rgba(245,158,11,0.2)]',
     icon: AlertTriangle,
   },
   clear: {
-    color: 'text-[var(--color-accent-emerald)]',
-    bg: 'bg-[var(--color-accent-emerald)]/10',
-    border: 'border-[var(--color-accent-emerald)]/20',
+    color: 'text-emerald-400',
+    bg: 'bg-emerald-500/10',
+    border: 'border-emerald-500/30',
+    glow: 'shadow-[0_0_12px_rgba(16,185,129,0.2)]',
     icon: CheckCircle,
   },
   info: {
-    color: 'text-[var(--color-accent-cyan)]',
-    bg: 'bg-[var(--color-accent-cyan)]/10',
-    border: 'border-[var(--color-accent-cyan)]/20',
+    color: 'text-cyan-400',
+    bg: 'bg-cyan-500/10',
+    border: 'border-cyan-500/30',
+    glow: 'shadow-[0_0_12px_rgba(0,240,255,0.2)]',
     icon: Info,
   },
 };
@@ -43,10 +47,11 @@ export function StatusBadge({ status, className, children, ...props }: StatusBad
   return (
     <div
       className={cn(
-        "inline-flex items-center space-x-1.5 px-2.5 py-1 rounded-full text-xs font-semibold uppercase tracking-wider border backdrop-blur-sm",
+        "inline-flex items-center space-x-1.5 px-2.5 py-1 rounded-full text-xs font-mono font-semibold uppercase tracking-wider border backdrop-blur-md transition-all duration-300",
         config.color,
         config.bg,
         config.border,
+        config.glow,
         className
       )}
       {...props}

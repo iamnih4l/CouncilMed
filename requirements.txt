@@ -1,0 +1,25 @@
+# CouncilMed — Hugging Face & Production Requirements
+# ====================================================
+
+# === Core API & UI ===
+fastapi>=0.109.0
+uvicorn>=0.27.0
+gradio>=4.0.0
+pydantic>=2.5.0
+httpx>=0.26.0
+python-multipart>=0.0.6
+
+# === Database ===
+sqlalchemy>=2.0.0
+aiosqlite>=0.19.0
+
+# === Deep Learning ===
+torch>=2.0.0
+torchvision>=0.17.0
+numpy>=1.24.0
+Pillow>=10.0.0
+scipy>=1.11.0
+
+# === Medical Imaging ===
+pydicom>=2.4.0
+pyyaml>=6.0.0

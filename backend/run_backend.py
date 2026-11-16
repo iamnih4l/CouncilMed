@@ -14,4 +14,6 @@ if __name__ == "__main__":
     
     # Run the Uvicorn server programmatically
     # We use app directly instead of a string to avoid import issues in PyInstaller
-    uvicorn.run(app, host="127.0.0.1", port=8000)
+    host = os.environ.get("HOST", "127.0.0.1")
+    port = int(os.environ.get("PORT", "8000"))
+    uvicorn.run(app, host=host, port=port)

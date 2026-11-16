@@ -65,4 +65,60 @@
     border-radius: inherit;
     pointer-events: none;
   }
+
+  .btn-tactile {
+    transition: transform 0.12s ease-out, box-shadow 0.2s ease-out, background-color 0.2s ease-out;
+  }
+  .btn-tactile:active {
+    transform: scale(0.97);
+  }
+
+  .scanline-pattern {
+    background: linear-gradient(
+      rgba(18, 16, 16, 0) 50%, 
+      rgba(0, 0, 0, 0.35) 50%
+    ), linear-gradient(
+      90deg,
+      rgba(0, 240, 255, 0.03),
+      rgba(0, 0, 0, 0.01),
+      rgba(0, 240, 255, 0.03)
+    );
+    background-size: 100% 4px, 6px 100%;
+  }
+
+  .glow-cyan-sm {
+    box-shadow: 0 0 15px -3px rgba(0, 240, 255, 0.25);
+  }
+
+  .glow-cyan-md {
+    box-shadow: 0 0 25px -4px rgba(0, 240, 255, 0.35);
+  }
+
+  .glow-emerald-sm {
+    box-shadow: 0 0 15px -3px rgba(16, 185, 129, 0.3);
+  }
+
+  .glow-amber-sm {
+    box-shadow: 0 0 15px -3px rgba(245, 158, 11, 0.3);
+  }
+
+  .glow-red-sm {
+    box-shadow: 0 0 15px -3px rgba(239, 68, 68, 0.3);
+  }
+}
+
+/* Custom HUD Scrollbars */
+::-webkit-scrollbar {
+  width: 6px;
+  height: 6px;
+}
+::-webkit-scrollbar-track {
+  background: rgba(0, 0, 0, 0.25);
+}
+::-webkit-scrollbar-thumb {
+  background: rgba(255, 255, 255, 0.15);
+  border-radius: 9999px;
+}
+::-webkit-scrollbar-thumb:hover {
+  background: rgba(0, 240, 255, 0.5);
 }

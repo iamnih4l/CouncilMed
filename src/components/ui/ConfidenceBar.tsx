@@ -7,21 +7,21 @@ interface ConfidenceBarProps {
 
 export function ConfidenceBar({ score, className }: ConfidenceBarProps) {
   // Determine color based on score
-  let colorClass = 'bg-[var(--color-accent-emerald)] shadow-[0_0_10px_rgba(16,185,129,0.5)]';
-  if (score < 60) colorClass = 'bg-[var(--color-accent-ruby)] shadow-[0_0_10px_rgba(239,68,68,0.5)]';
-  else if (score < 85) colorClass = 'bg-[var(--color-accent-amber)] shadow-[0_0_10px_rgba(245,158,11,0.5)]';
+  let colorClass = 'bg-emerald-400 shadow-[0_0_12px_rgba(16,185,129,0.6)]';
+  if (score < 60) colorClass = 'bg-red-400 shadow-[0_0_12px_rgba(239,68,68,0.6)]';
+  else if (score < 85) colorClass = 'bg-amber-400 shadow-[0_0_12px_rgba(245,158,11,0.6)]';
 
   return (
-    <div className={cn("w-full flex items-center space-x-3", className)}>
-      <div className="flex-1 h-2 bg-black/40 rounded-full overflow-hidden border border-white/5 relative">
+    <div className={cn("w-full flex items-center space-x-3 font-mono", className)}>
+      <div className="flex-1 h-2 bg-black/60 rounded-full overflow-hidden border border-white/10 relative">
         <div 
-          className={cn("h-full rounded-full transition-all duration-1000 ease-out", colorClass)}
-          style={{ width: `${score}%` }}
+          className={cn("h-full rounded-full transition-all duration-700 ease-out", colorClass)}
+          style={{ width: `${Math.min(100, Math.max(0, score))}%` }}
         />
       </div>
       <span className={cn(
-        "text-sm font-semibold tracking-wide w-12 text-right",
-        score >= 85 ? "text-[var(--color-accent-emerald)]" : score >= 60 ? "text-[var(--color-accent-amber)]" : "text-[var(--color-accent-ruby)]"
+        "text-xs font-semibold tabular-nums w-12 text-right",
+        score >= 85 ? "text-emerald-400" : score >= 60 ? "text-amber-400" : "text-red-400"
       )}>
         {score.toFixed(1)}%
       </span>

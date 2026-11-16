@@ -134,7 +134,17 @@ export interface AnalysisHistoryItem {
 // API Client
 // ==============================
 
-const API_BASE = 'http://localhost:8000';
+export function resolveApiBase(): string {
+  const envUrl = import.meta.env.VITE_API_URL;
+  if (!envUrl) return 'http://localhost:8000';
+  let clean = envUrl.trim().replace(/\/+$/, '');
+  if (clean.includes('.hf.space') && !clean.endsWith('/gradio_api')) {
+    clean += '/gradio_api';
+  }
+  return clean;
+}
+
+export const API_BASE = resolveApiBase();
 
 class CouncilMedAPI {
   private baseUrl: string;

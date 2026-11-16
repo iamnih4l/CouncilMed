@@ -356,9 +356,9 @@ export function CouncilEvidencePanel({ result, onReview, reviewStatus }: Council
                 <div className="flex items-center gap-2 mt-3">
                   <button
                     onClick={() => onReview('accepted')}
-                    className={`flex-1 py-2 px-3 rounded-lg border text-xs font-medium flex items-center justify-center gap-1.5 transition-all ${
+                    className={`flex-1 py-2 px-3 rounded-lg border text-xs font-mono tracking-wider uppercase flex items-center justify-center gap-1.5 transition-all btn-tactile ${
                       reviewStatus === 'accepted'
-                        ? 'bg-emerald-500/20 border-emerald-500/50 text-emerald-300 shadow-[0_0_15px_rgba(16,185,129,0.2)]'
+                        ? 'bg-emerald-500/20 border-emerald-500/50 text-emerald-300 shadow-[0_0_15px_rgba(16,185,129,0.25)]'
                         : 'bg-emerald-500/5 border-emerald-500/20 text-emerald-400 hover:bg-emerald-500/10'
                     }`}
                   >
@@ -366,9 +366,9 @@ export function CouncilEvidencePanel({ result, onReview, reviewStatus }: Council
                   </button>
                   <button
                     onClick={() => onReview('modified')}
-                    className={`flex-1 py-2 px-3 rounded-lg border text-xs font-medium flex items-center justify-center gap-1.5 transition-all ${
+                    className={`flex-1 py-2 px-3 rounded-lg border text-xs font-mono tracking-wider uppercase flex items-center justify-center gap-1.5 transition-all btn-tactile ${
                       reviewStatus === 'modified'
-                        ? 'bg-amber-500/20 border-amber-500/50 text-amber-300 shadow-[0_0_15px_rgba(245,158,11,0.2)]'
+                        ? 'bg-amber-500/20 border-amber-500/50 text-amber-300 shadow-[0_0_15px_rgba(245,158,11,0.25)]'
                         : 'bg-amber-500/5 border-amber-500/20 text-amber-400 hover:bg-amber-500/10'
                     }`}
                   >
@@ -376,9 +376,9 @@ export function CouncilEvidencePanel({ result, onReview, reviewStatus }: Council
                   </button>
                   <button
                     onClick={() => onReview('rejected')}
-                    className={`flex-1 py-2 px-3 rounded-lg border text-xs font-medium flex items-center justify-center gap-1.5 transition-all ${
+                    className={`flex-1 py-2 px-3 rounded-lg border text-xs font-mono tracking-wider uppercase flex items-center justify-center gap-1.5 transition-all btn-tactile ${
                       reviewStatus === 'rejected'
-                        ? 'bg-red-500/20 border-red-500/50 text-red-300 shadow-[0_0_15px_rgba(239,68,68,0.2)]'
+                        ? 'bg-red-500/20 border-red-500/50 text-red-300 shadow-[0_0_15px_rgba(239,68,68,0.25)]'
                         : 'bg-red-500/5 border-red-500/20 text-red-400 hover:bg-red-500/10'
                     }`}
                   >

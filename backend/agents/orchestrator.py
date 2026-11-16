@@ -10,14 +10,15 @@ from __future__ import annotations
 import json
 import logging
 import time
+import os
 from typing import Any
 
 from ..council.evidence import CouncilResult, AgentInsight, ModelStatus
 
 logger = logging.getLogger(__name__)
 
-DEFAULT_OLLAMA_MODEL = "llama3:8b-instruct-fp16"
-DEFAULT_OLLAMA_BASE_URL = "http://127.0.0.1:11434"
+DEFAULT_OLLAMA_MODEL = os.getenv("OLLAMA_MODEL", "llama3:8b-instruct-fp16")
+DEFAULT_OLLAMA_BASE_URL = os.getenv("OLLAMA_BASE_URL", "http://127.0.0.1:11434")
 
 
 def resolve_installed_ollama_model(
@@ -86,6 +87,14 @@ def format_council_evidence(result: CouncilResult) -> str:
 def build_system_prompt() -> str:
     return """You are a clinical AI assistant embedded in the CouncilMed medical imaging analysis system.
 Interpret the evidence produced by the AI Council — a panel of independent deep learning models.
+
+CRITICAL RULES & SAFETY:
+1. You are NOT making a diagnosis. Your role is clinical decision-support only.
+2. All findings require qualified clinician review and validation.
+3. Every insight MUST be traceable to specific model evidence.
+4. Highlight model disagreements, elevated uncertainty, and potential false-negative risks.
+5. Do not invent or assume clinical findings not supported by model evidence.
+
 Respond ONLY with a valid JSON object matching the required schema:
 {
   "key_insights": ["string"],
@@ -273,8 +282,8 @@ def _parse_agent_response(raw_text: str) -> dict[str, Any]:
         "clinical_significance": [],
         "recommended_actions": ["Clinician verification recommended."],
         "missing_information": [],
-        "safety_flags": [],
-        "confidence": 0.75,
+        "safety_flags": ["AI model returned non-structured text response — requires direct clinician review."],
+        "confidence": 0.50,
     }
 
 

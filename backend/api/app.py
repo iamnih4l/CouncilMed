@@ -12,7 +12,7 @@ from pathlib import Path
 
 from fastapi import FastAPI, File, UploadFile, HTTPException, Query, Request
 from fastapi.middleware.cors import CORSMiddleware
-from fastapi.responses import FileResponse
+from fastapi.responses import FileResponse, HTMLResponse
 
 from ..council.evidence import ModelStatus
 from .schemas import (
@@ -76,9 +76,112 @@ app.add_middleware(
     CORSMiddleware,
     allow_origins=["*"],
     allow_credentials=False,
-    allow_methods=["GET", "POST", "PUT"],
+    allow_methods=["*"],
     allow_headers=["*"],
 )
+
+
+@app.get("/", response_class=HTMLResponse)
+async def root_status():
+    summary = _pipeline.get_registry_summary() if _pipeline else {}
+    models_count = summary.get("registry", {}).get("installed", 0)
+    device = summary.get("hardware", {}).get("device", "cpu")
+    return f"""<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <title>CouncilMed Cloud Backend</title>
+  <style>
+    body {{
+      font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
+      background: #090d16;
+      color: #e2e8f0;
+      display: flex;
+      justify-content: center;
+      align-items: center;
+      min-height: 100vh;
+      margin: 0;
+    }}
+    .card {{
+      background: #111827;
+      border: 1px solid #1f2937;
+      border-radius: 12px;
+      padding: 32px 40px;
+      max-width: 520px;
+      box-shadow: 0 10px 25px -5px rgba(0,0,0,0.5);
+    }}
+    .status-badge {{
+      display: inline-flex;
+      align-items: center;
+      gap: 8px;
+      background: rgba(16, 185, 129, 0.15);
+      color: #34d399;
+      padding: 4px 12px;
+      border-radius: 9999px;
+      font-size: 13px;
+      font-weight: 600;
+      border: 1px solid rgba(16, 185, 129, 0.3);
+    }}
+    .dot {{
+      width: 8px;
+      height: 8px;
+      background: #10b981;
+      border-radius: 50%;
+      box-shadow: 0 0 8px #10b981;
+    }}
+    h1 {{ margin: 16px 0 8px; font-size: 24px; color: #f8fafc; }}
+    p {{ color: #94a3b8; font-size: 14px; line-height: 1.5; }}
+    .stats {{
+      margin: 20px 0;
+      padding: 16px;
+      background: #1e293b;
+      border-radius: 8px;
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 12px;
+    }}
+    .stat-label {{ font-size: 11px; text-transform: uppercase; color: #64748b; letter-spacing: 0.05em; }}
+    .stat-val {{ font-size: 16px; font-weight: 700; color: #38bdf8; margin-top: 2px; }}
+    a {{
+      color: #38bdf8;
+      text-decoration: none;
+      font-weight: 500;
+    }}
+    a:hover {{ text-decoration: underline; }}
+    .links {{ display: flex; gap: 16px; margin-top: 24px; font-size: 14px; }}
+  </style>
+</head>
+<body>
+  <div class="card">
+    <div class="status-badge"><div class="dot"></div> BACKEND CLOUD SERVICE ONLINE</div>
+    <h1>CouncilMed API Server</h1>
+    <p>Multi-model medical imaging analysis backend powering the CouncilMed diagnostic workstation.</p>
+    <div class="stats">
+      <div>
+        <div class="stat-label">System Health</div>
+        <div class="stat-val" style="color: #34d399;">Operational</div>
+      </div>
+      <div>
+        <div class="stat-label">Compute Device</div>
+        <div class="stat-val">{device.upper()}</div>
+      </div>
+      <div>
+        <div class="stat-label">Models Loaded</div>
+        <div class="stat-val">{models_count} Architectures</div>
+      </div>
+      <div>
+        <div class="stat-label">Modalities</div>
+        <div class="stat-val">X-Ray, CT, MRI</div>
+      </div>
+    </div>
+    <div class="links">
+      <a href="/docs" target="_blank">Interactive Swagger Docs &rarr;</a>
+      <a href="/api/health" target="_blank">Health JSON &rarr;</a>
+      <a href="/api/models" target="_blank">Model Registry &rarr;</a>
+    </div>
+  </div>
+</body>
+</html>"""
 
 
 @app.get("/api/health", response_model=HealthResponse)
@@ -277,22 +380,39 @@ async def list_analyses(
 
 @app.post("/api/review")
 async def submit_review(review: ReviewDecision):
-    from ..database import get_session, CouncilResultRecord, AuditEvent
-    from sqlalchemy import select
+    from ..database import get_session, CouncilResultRecord, Analysis, AuditEvent
+    from sqlalchemy import select, or_
 
     async with await get_session() as session:
-        stmt = select(CouncilResultRecord).where(CouncilResultRecord.analysis_id == review.analysis_id)
+        stmt = (
+            select(CouncilResultRecord, Analysis)
+            .join(Analysis, Analysis.id == CouncilResultRecord.analysis_id)
+            .where(
+                or_(
+                    CouncilResultRecord.analysis_id == review.analysis_id,
+                    Analysis.request_id == review.analysis_id,
+                )
+            )
+        )
         result = await session.execute(stmt)
-        council_record = result.scalar_one_or_none()
-        if not council_record:
-            raise HTTPException(status_code=404, detail="Analysis not found")
+        row = result.first()
+        if row:
+            council_record, analysis_record = row
+            target_analysis_id = analysis_record.id
+        else:
+            stmt_direct = select(CouncilResultRecord).where(CouncilResultRecord.analysis_id == review.analysis_id)
+            res_direct = await session.execute(stmt_direct)
+            council_record = res_direct.scalar_one_or_none()
+            if not council_record:
+                raise HTTPException(status_code=404, detail="Analysis not found")
+            target_analysis_id = council_record.analysis_id
 
         council_record.human_review_status = review.decision
         council_record.reviewed_by = review.reviewer_name
         council_record.reviewed_at = datetime.now(timezone.utc)
 
         audit = AuditEvent(
-            analysis_id=review.analysis_id,
+            analysis_id=target_analysis_id,
             event_type="human_review",
             event_data={
                 "decision": review.decision,

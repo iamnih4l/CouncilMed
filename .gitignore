@@ -50,3 +50,6 @@ testing_data/
 *.lnk
 Untitled*
 Untitled-*
+scripts/cloudflared.exe
+vercel_url.txt
+frontend_debug.log

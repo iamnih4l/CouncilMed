@@ -519,6 +519,10 @@ class CouncilEngine:
         requires_review, review_reasons = determine_human_review(
             consensus_level, ensemble_uncertainty, fused_confidence, disagreements
         )
+        failed_count = len(evidence_list) - len(valid_evidence)
+        if failed_count > 0:
+            requires_review = True
+            review_reasons.insert(0, f"{failed_count} council model(s) failed or encountered errors — operating in degraded redundancy mode")
         
         # Step 9: Compute total inference time
         total_time = sum(ev.processing_time_ms for ev in evidence_list)

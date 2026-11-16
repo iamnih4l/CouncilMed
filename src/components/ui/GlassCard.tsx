@@ -10,8 +10,8 @@ export function GlassCard({ children, className, focused, ...props }: GlassCardP
   return (
     <div
       className={cn(
-        "bg-white/5 backdrop-blur-md border border-white/10 shadow-[0_4px_30px_rgba(0,0,0,0.1)] rounded-2xl p-6 transition-all duration-300",
-        focused && "border-white/20 shadow-[0_0_20px_rgba(6,182,212,0.15)] bg-white/10",
+        "bg-black/40 backdrop-blur-xl border border-white/10 shadow-[0_8px_32px_rgba(0,0,0,0.6)] rounded-2xl p-6 transition-all duration-300 hover:border-white/20",
+        focused && "border-cyan-500/40 shadow-[0_0_25px_rgba(0,240,255,0.2)] bg-black/60",
         className
       )}
       {...props}

@@ -21,11 +21,9 @@ import { WorkspaceEnvironment } from '../components/3d/WorkspaceEnvironment';
 import { CouncilEvidencePanel } from '../components/council/CouncilEvidencePanel';
 import { MedicalImageViewer } from '../components/viewer/MedicalImageViewer';
 import { useCouncilAnalysis } from '../hooks/useCouncilAnalysis';
-import { api } from '../services/api';
+import { api, API_BASE } from '../services/api';
 import { ReportViewer } from './Reports';
 import type { ReportResponse, ReportSectionResponse, AnalyzeResponse } from '../services/api';
-
-const API_BASE = 'http://localhost:8000';
 
 function synthesizeReportFromResult(result: AnalyzeResponse): ReportResponse {
   const cr = result.council_result;
@@ -238,7 +236,7 @@ export default function WorkstationAnalysis() {
       <WorkspaceEnvironment coreState={coreState} />
 
       {/* Top bar (Spatial overlay) */}
-      <div className="relative z-10 flex items-center justify-between mb-4 pointer-events-none">
+      <div className="relative z-10 flex items-center justify-between mb-4 pointer-events-auto">
         <div>
           <h1 className="text-2xl font-light tracking-[0.2em] text-white text-glow">
             ANALYSIS WORKSTATION
@@ -358,7 +356,7 @@ export default function WorkstationAnalysis() {
                   </div>
                   
                   <div className="w-64 h-1 rounded-full bg-cyan-900/30 overflow-hidden relative">
-                    <div className="absolute inset-0 bg-[url('/scanline.png')] opacity-50" />
+                    <div className="absolute inset-0 scanline-pattern opacity-60 pointer-events-none" />
                     <motion.div
                       className="h-full bg-cyan-400 shadow-[0_0_10px_rgba(0,240,255,0.8)]"
                       style={{ width: `${analysis.progress}%` }}

@@ -130,7 +130,23 @@ class AnalysisPipeline:
         errors: list[str] = []
         warnings: list[str] = []
 
-        metadata, pixel_data = self._parse_input(request.file_path)
+        try:
+            metadata, pixel_data = self._parse_input(request.file_path)
+        except Exception as e:
+            logger.error("Failed to parse input file %s: %s", request.file_path, e)
+            errors.append(f"Input parsing error: {e}")
+            from .council.evidence import CouncilResult
+            return AnalysisResponse(
+                request_id=request.request_id,
+                council_result=CouncilResult(
+                    primary_finding="Unreadable input file",
+                    requires_human_review=True,
+                    human_review_reasons=[f"Corrupted or invalid file format: {e}"],
+                ),
+                total_time_ms=(time.perf_counter() - start_time) * 1000,
+                errors=errors,
+                warnings=warnings,
+            )
 
         preview_path: str | None = None
         try:

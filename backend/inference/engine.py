@@ -38,7 +38,7 @@ def _get_device() -> str:
     try:
         import torch
         if torch.cuda.is_available():
-            return "cuda:0"
+            return "cuda"
         elif hasattr(torch.backends, "mps") and torch.backends.mps.is_available():
             return "mps"
     except ImportError:
@@ -258,6 +258,9 @@ def load_pytorch_model(manifest: ModelManifest) -> Any:
         return _model_cache[model_key]
 
     weights_path = Path(manifest.weights_path)
+    if not weights_path.is_absolute():
+        from ..paths import get_base_dir
+        weights_path = get_base_dir() / weights_path
     num_classes = manifest.num_classes or len(manifest.class_names) or 4
     arch_name = getattr(manifest, "architecture", "")
 
@@ -539,10 +542,14 @@ def get_hardware_info() -> dict[str, Any]:
     try:
         import torch
         if torch.cuda.is_available():
-            info["gpu_name"] = torch.cuda.get_device_name(0)
-            props = torch.cuda.get_device_properties(0)
-            info["gpu_vram_gb"] = round(props.total_mem / (1024**3), 1)
-            info["cuda_version"] = torch.version.cuda
+            try:
+                info["gpu_name"] = torch.cuda.get_device_name(0)
+                props = torch.cuda.get_device_properties(0)
+                total_mem = getattr(props, "total_memory", getattr(props, "total_mem", 0))
+                info["gpu_vram_gb"] = round(total_mem / (1024**3), 1) if total_mem else None
+                info["cuda_version"] = getattr(torch.version, "cuda", None)
+            except Exception as e:
+                logger.warning("Could not read GPU properties: %s", e)
         info["pytorch_version"] = torch.__version__
     except ImportError:
         pass

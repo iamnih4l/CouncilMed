@@ -1,0 +1,233 @@
+[
+  {
+    "filename": "brain_mri_1.png",
+    "rel_path": "eva-data/mri/brain_mri_1.png",
+    "modality": "MRI",
+    "anatomy": "brain",
+    "diagnosis": "Glioma / Glioblastoma",
+    "source_dataset": "Masoud Nickparvar Brain Tumor MRI Benchmark",
+    "resolution": "354x442",
+    "size_bytes": 99136,
+    "notes": "Unseen test MRI demonstrating high-grade intra-axial glial neoplasm."
+  },
+  {
+    "filename": "brain_mri_2.png",
+    "rel_path": "eva-data/mri/brain_mri_2.png",
+    "modality": "MRI",
+    "anatomy": "brain",
+    "diagnosis": "Meningioma",
+    "source_dataset": "Masoud Nickparvar Brain Tumor MRI Benchmark",
+    "resolution": "512x512",
+    "size_bytes": 99404,
+    "notes": "Unseen test MRI showing well-circumscribed extra-axial meningeal tumor."
+  },
+  {
+    "filename": "brain_mri_3.png",
+    "rel_path": "eva-data/mri/brain_mri_3.png",
+    "modality": "MRI",
+    "anatomy": "brain",
+    "diagnosis": "Normal Brain MRI",
+    "source_dataset": "Masoud Nickparvar Brain Tumor MRI Benchmark",
+    "resolution": "380x530",
+    "size_bytes": 92466,
+    "notes": "Unseen test MRI demonstrating symmetrical parenchyma without mass effect."
+  },
+  {
+    "filename": "mri_glioma_case1.png",
+    "rel_path": "eva-data/mri/mri_glioma_case1.png",
+    "modality": "MRI",
+    "anatomy": "brain",
+    "diagnosis": "Glioma / Glioblastoma",
+    "source_dataset": "Masoud Nickparvar Brain Tumor MRI Benchmark",
+    "resolution": "512x512",
+    "size_bytes": 97661,
+    "notes": "Unseen test MRI with distinct infiltrative parenchymal lesion."
+  },
+  {
+    "filename": "mri_meningioma_case1.png",
+    "rel_path": "eva-data/mri/mri_meningioma_case1.png",
+    "modality": "MRI",
+    "anatomy": "brain",
+    "diagnosis": "Meningioma",
+    "source_dataset": "Masoud Nickparvar Brain Tumor MRI Benchmark",
+    "resolution": "512x512",
+    "size_bytes": 156654,
+    "notes": "Unseen test MRI demonstrating dural attachment and clear border definition."
+  },
+  {
+    "filename": "mri_pituitary_case1.png",
+    "rel_path": "eva-data/mri/mri_pituitary_case1.png",
+    "modality": "MRI",
+    "anatomy": "brain",
+    "diagnosis": "Pituitary Adenoma",
+    "source_dataset": "Masoud Nickparvar Brain Tumor MRI Benchmark",
+    "resolution": "512x512",
+    "size_bytes": 153162,
+    "notes": "Unseen test MRI showing expansion in the sella turcica region."
+  },
+  {
+    "filename": "mri_normal_case1.png",
+    "rel_path": "eva-data/mri/mri_normal_case1.png",
+    "modality": "MRI",
+    "anatomy": "brain",
+    "diagnosis": "Normal Brain MRI",
+    "source_dataset": "Masoud Nickparvar Brain Tumor MRI Benchmark",
+    "resolution": "393x400",
+    "size_bytes": 87555,
+    "notes": "Healthy cerebral hemispheres, normal ventricles, no edema."
+  },
+  {
+    "filename": "chest_ct_1.png",
+    "rel_path": "eva-data/ct/chest_ct_1.png",
+    "modality": "CT",
+    "anatomy": "chest",
+    "diagnosis": "Pulmonary Nodule (Adenocarcinoma)",
+    "source_dataset": "Chest CT-Scan Images Benchmark (TCIA/LIDC-IDRI derived)",
+    "resolution": "381x282",
+    "size_bytes": 72717,
+    "notes": "Axial thoracic CT revealing solitary peripheral pulmonary nodule."
+  },
+  {
+    "filename": "chest_ct_2.png",
+    "rel_path": "eva-data/ct/chest_ct_2.png",
+    "modality": "CT",
+    "anatomy": "chest",
+    "diagnosis": "Ground-Glass Opacity (GGO / Viral Pneumonitis)",
+    "source_dataset": "COVID-19 Thoracic CT Benchmark (kucaantunes)",
+    "resolution": "509x341",
+    "size_bytes": 176024,
+    "notes": "Axial chest CT displaying bilateral peripheral ground-glass opacities."
+  },
+  {
+    "filename": "chest_ct_3.png",
+    "rel_path": "eva-data/ct/chest_ct_3.png",
+    "modality": "CT",
+    "anatomy": "chest",
+    "diagnosis": "Normal Chest CT",
+    "source_dataset": "Chest CT-Scan Images Benchmark",
+    "resolution": "371x251",
+    "size_bytes": 70942,
+    "notes": "Unremarkable thoracic scan with clear lung aeration and clear mediastinum."
+  },
+  {
+    "filename": "ct_pulmonary_nodule_case1.png",
+    "rel_path": "eva-data/ct/ct_pulmonary_nodule_case1.png",
+    "modality": "CT",
+    "anatomy": "chest",
+    "diagnosis": "Pulmonary Nodule / Primary Lesion",
+    "source_dataset": "Chest CT-Scan Images Benchmark",
+    "resolution": "486x335",
+    "size_bytes": 96930,
+    "notes": "Clear focal density in pulmonary field."
+  },
+  {
+    "filename": "ct_squamous_carcinoma_case1.png",
+    "rel_path": "eva-data/ct/ct_squamous_carcinoma_case1.png",
+    "modality": "CT",
+    "anatomy": "chest",
+    "diagnosis": "Squamous Cell Carcinoma",
+    "source_dataset": "Chest CT-Scan Images Benchmark",
+    "resolution": "488x339",
+    "size_bytes": 102026,
+    "notes": "Central bronchial thickening and prominent solid mass."
+  },
+  {
+    "filename": "ct_large_cell_carcinoma_case1.png",
+    "rel_path": "eva-data/ct/ct_large_cell_carcinoma_case1.png",
+    "modality": "CT",
+    "anatomy": "chest",
+    "diagnosis": "Large Cell Carcinoma",
+    "source_dataset": "Chest CT-Scan Images Benchmark",
+    "resolution": "411x285",
+    "size_bytes": 75170,
+    "notes": "Large peripheral pulmonary mass with tissue density variation."
+  },
+  {
+    "filename": "ct_ground_glass_case1.png",
+    "rel_path": "eva-data/ct/ct_ground_glass_case1.png",
+    "modality": "CT",
+    "anatomy": "chest",
+    "diagnosis": "Bilateral Ground-Glass Opacities",
+    "source_dataset": "COVID-19 Thoracic CT Benchmark",
+    "resolution": "425x300",
+    "size_bytes": 138010,
+    "notes": "Multifocal subpleural ground glass attenuation typical of viral pneumonitis."
+  },
+  {
+    "filename": "ct_normal_case1.png",
+    "rel_path": "eva-data/ct/ct_normal_case1.png",
+    "modality": "CT",
+    "anatomy": "chest",
+    "diagnosis": "Normal Chest CT",
+    "source_dataset": "Chest CT-Scan Images Benchmark",
+    "resolution": "371x251",
+    "size_bytes": 70218,
+    "notes": "Healthy lung parenchyma without consolidations or effusions."
+  },
+  {
+    "filename": "chest_xray_1.png",
+    "rel_path": "eva-data/xray/chest_xray_1.png",
+    "modality": "XRAY",
+    "anatomy": "chest",
+    "diagnosis": "Bacterial Pneumonia (Lobar Consolidation)",
+    "source_dataset": "Guangzhou Women & Children's Medical Center Kermany Benchmark",
+    "resolution": "1024x680",
+    "size_bytes": 358777,
+    "notes": "Prominent lobar consolidation with air bronchograms in right hemithorax."
+  },
+  {
+    "filename": "chest_xray_2.png",
+    "rel_path": "eva-data/xray/chest_xray_2.png",
+    "modality": "XRAY",
+    "anatomy": "chest",
+    "diagnosis": "Viral Pneumonia (Diffuse Infiltrates)",
+    "source_dataset": "Guangzhou Women & Children's Medical Center Kermany Benchmark",
+    "resolution": "1496x960",
+    "size_bytes": 798793,
+    "notes": "Diffuse reticular/interstitial opacities throughout bilateral lung fields."
+  },
+  {
+    "filename": "chest_xray_3.png",
+    "rel_path": "eva-data/xray/chest_xray_3.png",
+    "modality": "XRAY",
+    "anatomy": "chest",
+    "diagnosis": "Normal Chest Radiograph",
+    "source_dataset": "Guangzhou Women & Children's Medical Center Kermany Benchmark",
+    "resolution": "1852x1443",
+    "size_bytes": 1750909,
+    "notes": "Clear lungs, sharp costophrenic angles, normal cardiothoracic ratio."
+  },
+  {
+    "filename": "xray_pneumonia_bacterial_case1.png",
+    "rel_path": "eva-data/xray/xray_pneumonia_bacterial_case1.png",
+    "modality": "XRAY",
+    "anatomy": "chest",
+    "diagnosis": "Bacterial Pneumonia",
+    "source_dataset": "Guangzhou Kermany Pediatric Chest X-Ray Benchmark",
+    "resolution": "1136x680",
+    "size_bytes": 377615,
+    "notes": "Classic focal alveolar opacification."
+  },
+  {
+    "filename": "xray_pneumonia_viral_case1.png",
+    "rel_path": "eva-data/xray/xray_pneumonia_viral_case1.png",
+    "modality": "XRAY",
+    "anatomy": "chest",
+    "diagnosis": "Viral Pneumonia",
+    "source_dataset": "Guangzhou Kermany Pediatric Chest X-Ray Benchmark",
+    "resolution": "1314x1145",
+    "size_bytes": 844383,
+    "notes": "Bilateral peribronchial thickening and interstitial markings."
+  },
+  {
+    "filename": "xray_normal_case1.png",
+    "rel_path": "eva-data/xray/xray_normal_case1.png",
+    "modality": "XRAY",
+    "anatomy": "chest",
+    "diagnosis": "Normal Chest Radiograph",
+    "source_dataset": "Guangzhou Kermany Pediatric Chest X-Ray Benchmark",
+    "resolution": "2444x2155",
+    "size_bytes": 3426268,
+    "notes": "Unremarkable PA radiograph with clear diaphragmatic contours."
+  }
+]

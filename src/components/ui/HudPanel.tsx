@@ -54,24 +54,24 @@ export function HudPanel({ children, className = '', onClick, onDrop, onDragOver
       onClick={onClick}
       onDrop={onDrop}
       onDragOver={onDragOver}
-      initial={{ opacity: 0, y: 20 }}
+      initial={{ opacity: 0, y: 14 }}
       animate={{ opacity: 1, y: 0 }}
-      transition={{ duration: 0.5, ease: "easeOut" }}
-      className={`relative overflow-hidden rounded-xl bg-black/40 backdrop-blur-xl border border-white/5 shadow-[0_8px_32px_rgba(0,0,0,0.5)] p-6 transition-colors duration-500 hover:border-cyan-500/30 ${className}`}
+      transition={{ duration: 0.35, ease: "easeOut" }}
+      className={`relative overflow-hidden rounded-xl bg-black/50 backdrop-blur-2xl border border-white/10 shadow-[0_8px_32px_rgba(0,0,0,0.7)] p-6 transition-all duration-300 hover:border-cyan-500/40 hover:shadow-[0_8px_32px_rgba(0,240,255,0.08)] ${className}`}
     >
       <div
         className="pointer-events-none absolute -inset-px opacity-0 transition duration-300 rounded-xl"
         style={{
           opacity,
-          background: `radial-gradient(600px circle at ${position.x}px ${position.y}px, rgba(0,240,255,.05), transparent 40%)`,
+          background: `radial-gradient(600px circle at ${position.x}px ${position.y}px, rgba(0,240,255,.08), transparent 40%)`,
         }}
       />
       
-      {/* Corner accents */}
-      <div className="absolute top-0 left-0 w-2 h-2 border-t border-l border-cyan-500/50 rounded-tl-xl pointer-events-none" />
-      <div className="absolute top-0 right-0 w-2 h-2 border-t border-r border-cyan-500/50 rounded-tr-xl pointer-events-none" />
-      <div className="absolute bottom-0 left-0 w-2 h-2 border-b border-l border-cyan-500/50 rounded-bl-xl pointer-events-none" />
-      <div className="absolute bottom-0 right-0 w-2 h-2 border-b border-r border-cyan-500/50 rounded-br-xl pointer-events-none" />
+      {/* Corner accents with holographic glow */}
+      <div className="absolute top-0 left-0 w-2.5 h-2.5 border-t border-l border-cyan-400/80 rounded-tl-xl pointer-events-none shadow-[0_0_8px_rgba(0,240,255,0.3)]" />
+      <div className="absolute top-0 right-0 w-2.5 h-2.5 border-t border-r border-cyan-400/80 rounded-tr-xl pointer-events-none shadow-[0_0_8px_rgba(0,240,255,0.3)]" />
+      <div className="absolute bottom-0 left-0 w-2.5 h-2.5 border-b border-l border-cyan-400/80 rounded-bl-xl pointer-events-none shadow-[0_0_8px_rgba(0,240,255,0.3)]" />
+      <div className="absolute bottom-0 right-0 w-2.5 h-2.5 border-b border-r border-cyan-400/80 rounded-br-xl pointer-events-none shadow-[0_0_8px_rgba(0,240,255,0.3)]" />
 
       <div className="relative z-10 h-full">{children}</div>
     </motion.div>
