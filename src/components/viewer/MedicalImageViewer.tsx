@@ -3,8 +3,9 @@ import { motion } from 'framer-motion';
 import {
   ZoomIn, ZoomOut, RotateCcw, Move,
   SunMedium, Contrast, Ruler, Eye, EyeOff,
-  Layers, Info, Grid3x3,
+  Layers, Info, Grid3x3, Flame, LayoutGrid,
 } from 'lucide-react';
+import type { ModelEvidenceResponse } from '../../services/api';
 
 interface ViewerState {
   zoom: number;
@@ -18,7 +19,7 @@ interface ViewerState {
   activeTool: 'pan' | 'window' | 'zoom' | 'measure';
 }
 
-interface OverlayItem {
+export interface OverlayItem {
   model_id: string;
   url: string;
   overlay_type: string;
@@ -28,18 +29,22 @@ interface MedicalImageViewerProps {
   imageUrl: string | null;
   overlayUrl?: string | null;
   overlays?: OverlayItem[];
+  selectedOverlayIdx?: number;
+  onSelectOverlayIdx?: (idx: number) => void;
+  onOpenMultiHeatmapModal?: () => void;
+  memberEvidence?: ModelEvidenceResponse[];
   fileName?: string;
   imageShape?: number[];
   metadata?: Record<string, string>;
   modality?: string;
   anatomy?: string;
-  boxes?: { x: number, y: number, width: number, height: number }[];
+  boxes?: { x: number; y: number; width: number; height: number }[];
   className?: string;
 }
 
 const BACKEND_ORIGIN = import.meta.env.VITE_API_URL || 'http://127.0.0.1:8000';
 
-function resolveMediaUrl(rawUrl: string): string {
+export function resolveMediaUrl(rawUrl: string): string {
   if (
     rawUrl.startsWith('data:') ||
     rawUrl.startsWith('blob:') ||
@@ -58,6 +63,10 @@ export function MedicalImageViewer({
   imageUrl,
   overlayUrl,
   overlays = [],
+  selectedOverlayIdx: externalSelectedIdx,
+  onSelectOverlayIdx,
+  onOpenMultiHeatmapModal,
+  memberEvidence = [],
   fileName: _fileName = '',
   imageShape,
   metadata,
@@ -92,12 +101,27 @@ export function MedicalImageViewer({
   const overlayRef = useRef<HTMLImageElement | null>(null);
   const [imageLoaded, setImageLoaded] = useState(false);
   const [overlayLoaded, setOverlayLoaded] = useState(false);
-  const [selectedOverlayIdx, setSelectedOverlayIdx] = useState(0);
+  const [internalSelectedIdx, setInternalSelectedIdx] = useState(0);
   const glowPhaseRef = useRef(0);
   const animationRef = useRef<number | null>(null);
 
+  const activeSelectedIdx = externalSelectedIdx !== undefined ? externalSelectedIdx : internalSelectedIdx;
+
+  const handleSelectIdx = (idx: number) => {
+    if (idx === -1) {
+      setState(prev => ({ ...prev, showOverlay: false }));
+      return;
+    }
+    setState(prev => ({ ...prev, showOverlay: true }));
+    if (onSelectOverlayIdx) {
+      onSelectOverlayIdx(idx);
+    } else {
+      setInternalSelectedIdx(idx);
+    }
+  };
+
   const activeOverlayUrl = overlays.length > 0
-    ? overlays[selectedOverlayIdx]?.url ?? null
+    ? overlays[activeSelectedIdx]?.url ?? null
     : overlayUrl ?? null;
   const hasOverlays = activeOverlayUrl !== null || overlays.length > 0;
 
@@ -501,29 +525,54 @@ export function MedicalImageViewer({
 
           {hasOverlays && (
             <>
+              <div className="w-px h-5 bg-white/10 mx-1" />
               <button
                 onClick={() => setState(prev => ({ ...prev, showOverlay: !prev.showOverlay }))}
                 className={`p-1.5 rounded-lg transition-all flex items-center gap-1 ${
-                  state.showOverlay ? 'text-emerald-400 bg-emerald-500/10' : 'text-zinc-500 hover:text-zinc-300 hover:bg-white/5'
+                  state.showOverlay ? 'text-emerald-400 bg-emerald-500/10 border border-emerald-500/20' : 'text-zinc-500 hover:text-zinc-300 hover:bg-white/5'
                 }`}
                 title="Toggle Heatmap"
               >
                 {state.showOverlay ? <Eye className="w-3.5 h-3.5" /> : <EyeOff className="w-3.5 h-3.5" />}
                 <span className="text-[10px] hidden md:inline">Heatmap</span>
               </button>
-              {overlays.length > 1 && (
-                <select
-                  value={selectedOverlayIdx}
-                  onChange={e => setSelectedOverlayIdx(Number(e.target.value))}
-                  className="bg-black/60 border border-white/10 rounded-lg text-[10px] text-zinc-400 px-1 py-1 cursor-pointer"
-                  title="Select overlay model"
+
+              {overlays.length > 0 && (
+                <div className="flex items-center gap-1 bg-black/40 p-0.5 rounded-lg border border-white/5">
+                  {overlays.map((ov, i) => {
+                    const isActive = state.showOverlay && activeSelectedIdx === i;
+                    const evidence = memberEvidence.find(e => e.model_id === ov.model_id);
+                    const label = evidence?.model_name || ov.model_id;
+                    const shortLabel = label.length > 12 ? label.substring(0, 10) + '…' : label;
+
+                    return (
+                      <button
+                        key={ov.model_id}
+                        onClick={() => handleSelectIdx(i)}
+                        className={`px-2 py-1 rounded text-[10px] font-mono tracking-wider transition-all flex items-center gap-1 ${
+                          isActive
+                            ? 'bg-cyan-500/20 text-cyan-300 border border-cyan-400/40 shadow-[0_0_8px_rgba(0,240,255,0.25)]'
+                            : 'text-zinc-500 hover:text-zinc-300 hover:bg-white/5'
+                        }`}
+                        title={`Switch to ${label} (${ov.overlay_type.toUpperCase()})`}
+                      >
+                        <Flame className={`w-3 h-3 ${isActive ? 'text-cyan-400' : 'text-zinc-500'}`} />
+                        <span>{shortLabel}</span>
+                      </button>
+                    );
+                  })}
+                </div>
+              )}
+
+              {onOpenMultiHeatmapModal && overlays.length > 1 && (
+                <button
+                  onClick={onOpenMultiHeatmapModal}
+                  className="px-2 py-1 rounded-lg text-[10px] font-mono uppercase tracking-wider bg-cyan-500/10 hover:bg-cyan-500/20 text-cyan-300 border border-cyan-500/30 flex items-center gap-1.5 shadow-[0_0_10px_rgba(0,240,255,0.15)] transition-all btn-tactile ml-1"
+                  title="Open Multi-Model Heatmap Comparison Matrix"
                 >
-                  {overlays.map((ov, i) => (
-                    <option key={ov.model_id} value={i}>
-                      {ov.model_id} ({ov.overlay_type})
-                    </option>
-                  ))}
-                </select>
+                  <LayoutGrid className="w-3 h-3 text-cyan-400" />
+                  <span className="hidden sm:inline">Compare All ({overlays.length})</span>
+                </button>
               )}
             </>
           )}

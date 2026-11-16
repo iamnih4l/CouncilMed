@@ -19,7 +19,7 @@ import {
   Shield, ShieldAlert, ShieldCheck, ShieldX,
   ChevronDown, ChevronUp, AlertTriangle,
   CheckCircle, XCircle, Clock, Cpu, Brain,
-  Activity, TrendingUp, Edit3,
+  Activity, TrendingUp, Edit3, Flame, LayoutGrid,
 } from 'lucide-react';
 import type { CouncilResultResponse, ModelEvidenceResponse } from '../../services/api';
 
@@ -27,6 +27,8 @@ interface CouncilEvidencePanelProps {
   result: CouncilResultResponse;
   onReview?: (decision: 'accepted' | 'rejected' | 'modified') => void;
   reviewStatus?: 'accepted' | 'rejected' | 'modified' | null;
+  onSelectModelHeatmap?: (modelId: string) => void;
+  onOpenMultiHeatmapModal?: () => void;
 }
 
 // ==============================
@@ -152,7 +154,15 @@ function ConfidenceArc({ value, size = 80 }: { value: number; size?: number }) {
 // Model Evidence Card
 // ==============================
 
-function ModelEvidenceCard({ evidence, index }: { evidence: ModelEvidenceResponse; index: number }) {
+function ModelEvidenceCard({
+  evidence,
+  index,
+  onSelectHeatmap,
+}: {
+  evidence: ModelEvidenceResponse;
+  index: number;
+  onSelectHeatmap?: (modelId: string) => void;
+}) {
   const [expanded, setExpanded] = useState(false);
   const isSuccess = evidence.status === 'success';
 
@@ -268,6 +278,19 @@ function ModelEvidenceCard({ evidence, index }: { evidence: ModelEvidenceRespons
                     <span>{evidence.device}</span>
                   </div>
                 </div>
+
+                {onSelectHeatmap && (
+                  <button
+                    onClick={(e) => {
+                      e.stopPropagation();
+                      onSelectHeatmap(evidence.model_id);
+                    }}
+                    className="w-full py-1.5 px-3 rounded-lg bg-cyan-500/10 hover:bg-cyan-500/20 text-cyan-300 border border-cyan-500/30 text-xs font-mono uppercase tracking-wider flex items-center justify-center gap-1.5 transition-all btn-tactile shadow-[0_0_10px_rgba(0,240,255,0.1)]"
+                  >
+                    <Flame className="w-3.5 h-3.5 text-cyan-400" />
+                    <span>View {evidence.model_name || evidence.model_id} Heatmap</span>
+                  </button>
+                )}
               </div>
             </motion.div>
           )}
@@ -281,7 +304,13 @@ function ModelEvidenceCard({ evidence, index }: { evidence: ModelEvidenceRespons
 // Main Evidence Panel
 // ==============================
 
-export function CouncilEvidencePanel({ result, onReview, reviewStatus }: CouncilEvidencePanelProps) {
+export function CouncilEvidencePanel({
+  result,
+  onReview,
+  reviewStatus,
+  onSelectModelHeatmap,
+  onOpenMultiHeatmapModal,
+}: CouncilEvidencePanelProps) {
   
 
   return (
@@ -417,12 +446,29 @@ export function CouncilEvidencePanel({ result, onReview, reviewStatus }: Council
 
       {/* Individual Model Evidence */}
       <div>
-        <p className="text-[11px] text-zinc-500 uppercase tracking-wider mb-3 px-1">
-          Individual Model Evidence ({result.member_evidence.length} members)
-        </p>
+        <div className="flex items-center justify-between mb-3 px-1">
+          <p className="text-[11px] text-zinc-500 uppercase tracking-wider">
+            Individual Model Evidence ({result.member_evidence.length} members)
+          </p>
+          {onOpenMultiHeatmapModal && (
+            <button
+              onClick={onOpenMultiHeatmapModal}
+              className="px-2 py-0.5 rounded text-[10px] font-mono uppercase tracking-wider bg-cyan-500/10 hover:bg-cyan-500/20 text-cyan-300 border border-cyan-500/30 flex items-center gap-1 transition-all btn-tactile"
+              title="Open Multi-Model Heatmap Matrix"
+            >
+              <LayoutGrid className="w-3 h-3 text-cyan-400" />
+              <span>Multi-Heatmap Grid</span>
+            </button>
+          )}
+        </div>
         <div className="space-y-2">
           {result.member_evidence.map((evidence, index) => (
-            <ModelEvidenceCard key={evidence.model_id} evidence={evidence} index={index} />
+            <ModelEvidenceCard
+              key={evidence.model_id}
+              evidence={evidence}
+              index={index}
+              onSelectHeatmap={onSelectModelHeatmap}
+            />
           ))}
         </div>
       </div>

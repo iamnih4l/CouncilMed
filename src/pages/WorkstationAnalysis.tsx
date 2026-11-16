@@ -20,6 +20,7 @@ import { HudPanel } from '../components/ui/HudPanel';
 import { WorkspaceEnvironment } from '../components/3d/WorkspaceEnvironment';
 import { CouncilEvidencePanel } from '../components/council/CouncilEvidencePanel';
 import { MedicalImageViewer } from '../components/viewer/MedicalImageViewer';
+import { MultiHeatmapModal } from '../components/viewer/MultiHeatmapModal';
 import { useCouncilAnalysis } from '../hooks/useCouncilAnalysis';
 import { api, API_BASE } from '../services/api';
 import { ReportViewer } from './Reports';
@@ -123,8 +124,23 @@ export default function WorkstationAnalysis() {
   const [reportLoading, setReportLoading] = useState(false);
   const [reportData, setReportData] = useState<ReportResponse | null>(null);
   const [reportError, setReportError] = useState<string | null>(null);
+  const [isHeatmapModalOpen, setIsHeatmapModalOpen] = useState(false);
+  const [selectedOverlayIdx, setSelectedOverlayIdx] = useState(0);
   const fileInputRef = useRef<HTMLInputElement>(null);
   const previewUrlRef = useRef<string | null>(null);
+
+  const activeOverlays = analysis.result?.media?.overlays?.map(ov => ({
+    ...ov,
+    url: `${API_BASE}${ov.url}`,
+  })) || [];
+
+  const handleSelectModelHeatmap = useCallback((modelId: string) => {
+    const overlays = analysis.result?.media?.overlays || [];
+    const idx = overlays.findIndex(ov => ov.model_id === modelId);
+    if (idx !== -1) {
+      setSelectedOverlayIdx(idx);
+    }
+  }, [analysis.result?.media?.overlays]);
 
   const setPreviewFromFile = useCallback((file: File) => {
     if (previewUrlRef.current) {
@@ -386,7 +402,8 @@ export default function WorkstationAnalysis() {
               </div>
 
               <HudPanel className="flex-1 flex flex-col p-0 overflow-hidden">
-                <MedicalImageViewer imageUrl={imagePreview}
+                <MedicalImageViewer
+                  imageUrl={imagePreview}
                   fileName={fileName}
                   modality={analysis.result?.modality ?? selectedModality.split(' ').slice(1).join(' ')}
                   anatomy={analysis.result?.anatomy ?? selectedModality.split(' ')[0]}
@@ -403,10 +420,11 @@ export default function WorkstationAnalysis() {
                     ?.map(e => e.bounding_box)
                     .filter((b): b is NonNullable<typeof b> => b != null)
                   }
-                  overlays={analysis.result?.media?.overlays?.map(ov => ({
-                    ...ov,
-                    url: `${API_BASE}${ov.url}`,
-                  }))}
+                  overlays={activeOverlays}
+                  selectedOverlayIdx={selectedOverlayIdx}
+                  onSelectOverlayIdx={setSelectedOverlayIdx}
+                  onOpenMultiHeatmapModal={() => setIsHeatmapModalOpen(true)}
+                  memberEvidence={analysis.result?.council_result.member_evidence}
                   className="flex-1"
                 />
               </HudPanel>
@@ -453,6 +471,8 @@ export default function WorkstationAnalysis() {
                 result={analysis.result.council_result}
                 onReview={handleReview}
                 reviewStatus={reviewStatus}
+                onSelectModelHeatmap={handleSelectModelHeatmap}
+                onOpenMultiHeatmapModal={() => setIsHeatmapModalOpen(true)}
               />
 
               {/* View Report Button */}
@@ -665,6 +685,18 @@ export default function WorkstationAnalysis() {
           </div>
         )}
       </AnimatePresence>
+      {/* Multi-Model Explainability Heatmap Matrix Modal */}
+      <MultiHeatmapModal
+        isOpen={isHeatmapModalOpen}
+        onClose={() => setIsHeatmapModalOpen(false)}
+        imageUrl={imagePreview}
+        overlays={activeOverlays}
+        memberEvidence={analysis.result?.council_result.member_evidence}
+        onSelectOverlay={(idx) => {
+          if (idx >= 0) setSelectedOverlayIdx(idx);
+        }}
+        selectedOverlayIdx={selectedOverlayIdx}
+      />
     </div>
   );
 }

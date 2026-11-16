@@ -125,10 +125,11 @@ def generate_explainability(
 
     start_time = time.perf_counter()
 
+    dev = next(model.parameters()).device if hasattr(model, "parameters") else DEVICE
     if isinstance(input_image, np.ndarray):
-        tensor = torch.from_numpy(input_image).unsqueeze(0).float().to(DEVICE)
+        tensor = torch.from_numpy(input_image).unsqueeze(0).float().to(dev)
     else:
-        tensor = input_image.to(DEVICE)
+        tensor = input_image.to(dev)
 
     try:
         heatmap, layer_name = compute_gradcam_pytorch(model, tensor, target_class, target_layer)
