@@ -5,9 +5,11 @@ This document illustrates the typical user journey and system interaction sequen
 ## Core Clinical Workflow
 
 ### 1. Launch & Setup
-1. **Launch**: The clinician opens the CouncilMed Tauri desktop application.
-2. **Initialization**: The Tauri backend (`lib.rs`) spawns the Python FastAPI server as a sidecar process.
-3. **Health Check**: The React UI polls `/api/health` until the PyTorch models are successfully loaded into memory.
+
+The user can access CouncilMed via either deployment mode:
+- **Cloud Web Workstation (Mode B)**: Navigate directly to [https://council-med.vercel.app/](https://council-med.vercel.app/). The HUD automatically connects to the cloud backend at `https://mohammed12345678-councilai.hf.space` and displays `CUDA • 9 MODELS • OPERATIONAL`.
+- **Local Desktop Workstation (Mode A)**: Open the CouncilMed application locally (or run `npm run dev`). The local FastAPI server initializes at `http://localhost:8000`.
+- **Health Verification**: The React TopNav queries `/api/health` and displays real-time telemetry (compute device, loaded models, and audit readiness).
 
 ### 2. Analysis Initiation
 1. **Provide Input**: The user drags and drops a medical scan (e.g., a Brain MRI) into the Workstation dropzone.

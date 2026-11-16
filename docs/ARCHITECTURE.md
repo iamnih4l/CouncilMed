@@ -15,13 +15,49 @@ The system is built on a modern stack:
 
 CouncilMed provides evidence-based clinical consensus through an ensemble of independent AI council members. The intended users are clinicians and radiologists who need robust, traceable AI-assisted insights without compromising patient privacy (zero PHI data leakage due to the local-first architecture).
 
-## 3. High-Level Architecture
+## 3. High-Level Architecture & Dual-Mode Deployment
 
-The system is composed of four primary layers:
-1. **User Interface (UI)**: A React-based workstation running as a Tauri desktop application.
-2. **API/Application Layer**: A FastAPI backend that orchestrates the workflow.
-3. **Council Engine (Processing)**: A PyTorch-based inference pipeline that loads registered models, executes them, and fuses their results using Shannon entropy.
-4. **Agentic Explanation Layer**: An Ollama-powered LLM that grounds the mathematical model outputs in actual clinical guidelines retrieved from a ChromaDB vector database.
+The system is composed of four primary layers supporting two complementary deployment modes:
+
+1. **User Interface (UI)**: React 19 / TypeScript clinical workstation featuring:
+   - Executive HUD top navigation bar with live device telemetry (CUDA/CPU status, loaded models).
+   - Framer Motion route pill transitions and glassmorphism styling.
+   - Run mode: Can be run locally via Vite/Tauri or hosted in the cloud via Vercel Edge.
+2. **API & Gateway Layer**: FastAPI REST service exposing standards-compliant clinical endpoints (`/api/health`, `/api/analyze/upload`, `/api/models`, `/api/reports/generate`).
+3. **Council Engine (Processing)**: PyTorch & MONAI inference pipeline executing modality-specific councils across Brain MRI, Thoracic CT, and Chest X-Ray with Shannon entropy weighting and Grad-CAM explainability.
+4. **Agentic Explanation Layer**: Ollama-powered LLM grounding mathematical model outputs in clinical guidelines retrieved from ChromaDB.
+
+### Dual-Mode Deployment Topology
+
+```mermaid
+flowchart TD
+    subgraph DeploymentModes["Supported Deployment Topologies"]
+        direction TB
+        subgraph ModeA["Mode A: Local-First Clinical Workstation (HIPAA/GDPR Compliant)"]
+            ClinicianLocal["Hospital Radiologist Workstation"]
+            TauriShell["Local React Workstation UI (Port 5173 / Tauri)"]
+            LocalFastAPI["Localhost FastAPI Gateway (Port 8000)"]
+            LocalPyTorch["Local PyTorch CUDA/CPU Models"]
+            LocalDB[(Local SQLite Audit Trail)]
+            
+            ClinicianLocal --> TauriShell
+            TauriShell --> LocalFastAPI
+            LocalFastAPI --> LocalPyTorch
+            LocalFastAPI --> LocalDB
+        end
+
+        subgraph ModeB["Mode B: 24/7 Edge Cloud Telemedicine Gateway"]
+            RemoteUser["External Clinician / Evaluator / Browser"]
+            VercelEdge["Vercel Global Edge (council-med.vercel.app)"]
+            HFSpace["Hugging Face ZeroGPU Gateway (FastAPI + Gradio)"]
+            BlackwellGPU["NVIDIA RTX PRO 6000 Blackwell (95 GB VRAM)"]
+            
+            RemoteUser --> VercelEdge
+            VercelEdge -->|CORS REST API| HFSpace
+            HFSpace --> BlackwellGPU
+        end
+    end
+```
 
 ```mermaid
 flowchart TD

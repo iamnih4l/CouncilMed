@@ -17,13 +17,30 @@ pinned: false
 
 *Evidence-based clinical consensus through an ensemble of independent AI council members.*
 
+[![Live Web App](https://img.shields.io/badge/Live%20Workstation-council--med.vercel.app-00f0ff?style=for-the-badge&logo=vercel)](https://council-med.vercel.app/)
+[![Cloud Backend](https://img.shields.io/badge/ZeroGPU%20Backend-Hugging%20Face%20Spaces-ffd21e?style=for-the-badge&logo=huggingface)](https://huggingface.co/spaces/Mohammed12345678/CouncilAI)
+[![Hardware](https://img.shields.io/badge/Compute-NVIDIA%20Blackwell%20RTX%206000-76b900?style=for-the-badge&logo=nvidia)](https://council-med.vercel.app/)
+
 </div>
+
+---
+
+## 🌟 Live Deployments
+
+- 🏥 **Clinical Workstation UI**: [https://council-med.vercel.app/](https://council-med.vercel.app/)  
+  *Executive HUD navigation bar, real-time GPU telemetry, Grad-CAM heatmaps, and HL7 CDA report viewer.*
+- ⚡ **ZeroGPU Cloud Engine**: [https://huggingface.co/spaces/Mohammed12345678/CouncilAI](https://huggingface.co/spaces/Mohammed12345678/CouncilAI)  
+  *Powers 24/7 inference across 9 deep learning models on an NVIDIA RTX PRO 6000 Blackwell Server Edition (95 GB VRAM).*
 
 ---
 
 ## 1. Project Identity
 
-CouncilMed is a local-first medical imaging workstation that applies an ensemble "council" of AI models to analyze medical scans. Rather than relying on a single neural network, CouncilMed fuses predictions from multiple independent models using entropy-weighted uncertainty, ensuring that AI-assisted medical insights are robust, traceable, and evidence-based.
+CouncilMed is a multi-modal, agent-assisted medical imaging framework that applies an ensemble "council" of independent deep learning models to diagnose medical scans. Rather than relying on a single neural network, CouncilMed fuses predictions from multiple distinct architectures using Shannon entropy uncertainty weighting, ensuring that AI-assisted medical insights are robust, explainable, and accountable.
+
+CouncilMed supports **Dual-Mode Deployment**:
+1. **Mode A — Local-First Offline Workstation**: 100% on-device execution via Tauri desktop shell or local FastAPI, ensuring strict HIPAA/GDPR compliance with zero patient data leaving the clinic.
+2. **Mode B — 24/7 Cloud Telemedicine Workstation**: Zero-setup edge deployment on Vercel and Hugging Face ZeroGPU for remote consultations, peer review, and cross-platform access.
 
 ## 2. Why This Exists
 
@@ -39,10 +56,27 @@ CouncilMed exists to solve this "single-point-of-failure" problem. By forcing mu
 
 ## 4. Key Features
 
-- 🧠 **Dynamic Model Registry**: Easily plug-and-play new models via YAML manifests without altering core code.
+- 🧠 **Dynamic Model Registry**: 9 independent deep learning models dynamically managed across MRI, CT, and X-Ray.
 - 🖼️ **Clinical Image Viewer**: Integrated workstation UI to examine scans alongside Grad-CAM explainability heatmaps.
-- 🔒 **Local-First Architecture**: 100% of the processing (PyTorch + LLM + Vector DB) happens on the local machine. Zero PHI data leakage.
-- 📊 **SQLite Audit Trail**: Every inference, model disagreement, and human review decision is recorded persistently.
+- 🔒 **Dual Deployment Architecture**:
+  - **Local-First (HIPAA/GDPR Compliant)**: 100% on-device processing with local SQLite audit logs and zero PHI leakage.
+  - **24/7 ZeroGPU Cloud**: Public edge workstation on Vercel backed by an NVIDIA RTX PRO 6000 Blackwell GPU (95 GB VRAM).
+- 📊 **Mathematical Consensus Fusion**: Real-time Shannon entropy weighting ($H(p)$), calibration error (ECE), and agreement scoring.
+- 📄 **HL7-Aligned CDA Reports**: Automated structured clinical report generation with export capabilities.
+
+### Multi-Model Council Registry
+
+| Modality | Council Architecture | Underlying Backbone | Clinical Role | Primary Classes |
+| :--- | :--- | :--- | :--- | :--- |
+| **Brain MRI** | AttentionNet | MobileNetV2 + Spatial Attention | Lesion Localization | Glioblastoma, Meningioma, Pituitary, Normal |
+| **Brain MRI** | DenseNet-121 | Densely Connected CNN | 4-Class Classification | Glioblastoma, Meningioma, Pituitary, Normal |
+| **Brain MRI** | UNetLite | Lightweight Encoder-Decoder | Morphological Segmentation | Glioblastoma, Meningioma, Pituitary, Normal |
+| **Thoracic CT** | AttentionNet | CNN + Attention Squeeze-Excite | Nodule Localizer | Pulmonary Nodule, Embolism, Ground-Glass, Normal |
+| **Thoracic CT** | DenseNet-121 | Dense Feature Extractor | 4-Class Classification | Pulmonary Nodule, Embolism, Ground-Glass, Normal |
+| **Thoracic CT** | ResNet-50 | Deep Residual Classifier | Volumetric Classification | Pulmonary Nodule, Embolism, Ground-Glass, Normal |
+| **Chest X-Ray** | AttentionNet | Squeeze-and-Excitation Net | Radiograph Localizer | Pneumonia, Pneumothorax, Effusion, Normal |
+| **Chest X-Ray** | DenseNet-121 | CheXNet Architecture | Radiograph Analyzer | Pneumonia, Pneumothorax, Effusion, Normal |
+| **Chest X-Ray** | ResNet-50 | Residual Network | Screening Classifier | Pneumonia, Pneumothorax, Effusion, Normal |
 
 ## 5. Architecture
 
