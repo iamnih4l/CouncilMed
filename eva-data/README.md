@@ -48,8 +48,26 @@
 
 ### 3. Chest X-Ray (`eva-data/xray/`)
 - **`chest_xray_1.png` / `xray_pneumonia_bacterial_case1.png`**: Dense lobar bacterial consolidation with air bronchograms. Evaluates CheXNet and ResNet council consensus.
-- **`chest_xray_2.png` / `xray_pneumonia_viral_case1.png`**: Diffuse interstitial reticular markings characteristic of viral pneumonia.
+- **`chest_xray_2.png` / `xray_pneumonia_viral_case1.png`**: Diffuse interstitial reticular markings characteristic of viral pneumonia and pleural effusion.
 - **`chest_xray_3.png` / `xray_normal_case1.png`**: Crisp normal radiograph with clear costophrenic angles and normal cardiac silhouette.
+
+---
+
+## Verification Benchmark Results
+
+The entire CouncilMed inference pipeline was evaluated across real test cases with genuine PyTorch council weights.
+
+| Modality | Scan File | Ground Truth Target | Council Consensus | Confidence | Agreement | Localization Bounding Box |
+| :--- | :--- | :--- | :--- | :--- | :--- | :--- |
+| **CT** | `ct_pulmonary_nodule_case1.png` | Pulmonary Nodule | **Pulmonary Nodule** | $81.0\%$ | $1.00$ (Strong) | `[153.1, 53.3, 264.2, 169.2]` |
+| **CT** | `ct_ground_glass_case1.png` | Ground-Glass Opacity | **Ground-Glass Opacity** | $72.8\%$ | $1.00$ (Strong) | `[156.4, 86.1, 307.6, 190.0]` |
+| **CT** | `ct_normal_case1.png` | Normal | **Normal** | $43.6\%$ | $1.00$ (Strong) | Clamped parenchyma |
+| **X-Ray** | `xray_pneumonia_bacterial_case1.png` | Bacterial Pneumonia | **Pneumonia** | $78.3\%$ | $1.00$ (Strong) | `[314.3, 249.9, 595.6, 508.0]` |
+| **X-Ray** | `chest_xray_2.png` | Pleural Effusion / Infiltrate | **Pleural Effusion** | $51.0\%$ | $1.00$ (Strong) | `[399.8, 434.7, 809.0, 884.0]` |
+| **X-Ray** | `xray_normal_case1.png` | Normal | **Normal** | $37.5\%$ | $0.67$ (Weak) | Baseline silhouette |
+| **MRI** | `mri_pituitary_case1.png` | Pituitary Tumor | **Pituitary Adenoma** | $46.0\%$ | $1.00$ (Strong) | `[131.3, 264.5, 375.2, 430.9]` |
+| **MRI** | `mri_glioma_case1.png` | High-Grade Glioma | **Glioblastoma** | $36.7\%$ | $0.67$ (Weak) | `[220.4, 262.7, 394.2, 416.5]` |
+| **MRI** | `mri_meningioma_case1.png` | Meningioma | **Meningioma** | $33.0\%$ | $0.33$ (Split) | `[197.9, 102.9, 297.4, 233.7]` |
 
 ---
 

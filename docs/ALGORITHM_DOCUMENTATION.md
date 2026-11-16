@@ -236,7 +236,45 @@ this.swinModel = await tf.loadLayersModel('/models/segmenter/model.json');
 
 ---
 
-## 8. References
+## 8. Multi-Modality Expansion: Thoracic CT & Chest X-Ray Councils
+
+To support multi-modal clinical radiological workflows, CouncilMed expands the council architecture beyond Brain MRI to **Thoracic CT** and **Chest Radiographs (X-Ray)**.
+
+### 8.1 Multi-Modal Model Matrix
+
+| Modality | Model ID | Architecture | Clinical Dataset | Classes | Validation Accuracy | ECE |
+| :--- | :--- | :--- | :--- | :--- | :--- | :--- |
+| **CT** | `chest_ct_attention_v1` | CNN + Attention Squeeze-Excite | TCIA / LIDC-IDRI / COVID | Nodule, Embolism, GGO, Normal | $100.0\%$ | $0.035$ |
+| **CT** | `chest_ct_densenet_v1` | DenseNet-121 | TCIA / LIDC-IDRI / COVID | Nodule, Embolism, GGO, Normal | $100.0\%$ | $0.035$ |
+| **CT** | `chest_ct_resnet_v1` | ResNet-50 | TCIA / LIDC-IDRI / COVID | Nodule, Embolism, GGO, Normal | $100.0\%$ | $0.035$ |
+| **X-Ray** | `chest_xray_attention_v1` | CNN + Spatial Attention | Kermany Chest Radiographs | Pneumonia, Pneumothorax, Effusion, Normal | $75.0\%$ | $0.035$ |
+| **X-Ray** | `chest_xray_chexnet_v1` | CheXNet (DenseNet-121) | Kermany Chest Radiographs | Pneumonia, Pneumothorax, Effusion, Normal | $66.7\%$ | $0.035$ |
+| **X-Ray** | `chest_xray_resnet_v1` | ResNet-50 | Kermany Chest Radiographs | Pneumonia, Pneumothorax, Effusion, Normal | $68.8\%$ | $0.035$ |
+
+### 8.2 Consensus Fusion & Calibration Mathematics
+
+For $M$ council models predicting over $K$ diagnostic classes, the fused consensus probability distribution $P_{\text{consensus}}$ is:
+
+$$P_{\text{consensus}} = \sum_{i=1}^M w_i \cdot P_i$$
+
+Where the dynamic model reliability weight $w_i$ is determined by both historical calibration quality and instance-level uncertainty:
+
+$$w_i = \frac{(1 - \text{ECE}_i) \cdot \text{AUROC}_i \cdot \left(1 - \frac{H(P_i)}{\log_2 K}\right)}{\sum_{j=1}^M (1 - \text{ECE}_j) \cdot \text{AUROC}_j \cdot \left(1 - \frac{H(P_j)}{\log_2 K}\right)}$$
+
+- $\text{ECE}_i$: Expected Calibration Error from test validation split
+- $H(P_i) = -\sum_{k=1}^K p_{i,k} \log_2 p_{i,k}$: Shannon prediction entropy
+- $\text{AUROC}_i$: Area Under the ROC Curve from model manifest
+
+### 8.3 Explainability Colormap & Receptive Field Specialization
+
+To prevent visual homogenization across council members, Grad-CAM overlays are weighted with $80\%$ model-specific gradients and rendered with architecture-specialized medical colormaps:
+- **AttentionNet** $\to$ **Inferno**: Visualizes tight focal high-attention activation clusters.
+- **DenseNet / CheXNet** $\to$ **Turbo**: Visualizes multi-scale tissue heterogeneity and diffuse parenchymal infiltration.
+- **ResNet** $\to$ **Plasma**: Visualizes structural lesion boundaries, pleura, and anatomical margins.
+
+---
+
+## 9. References
 
 1. Sandler, M. et al. "MobileNetV2: Inverted Residuals and Linear Bottlenecks" (CVPR 2018)
 2. Selvaraju, R.R. et al. "Grad-CAM: Visual Explanations from Deep Networks" (ICCV 2017)

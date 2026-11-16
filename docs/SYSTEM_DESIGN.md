@@ -59,13 +59,18 @@ Instead of blindly averaging model outputs (which is vulnerable to overconfident
 2. **Dynamic Weighting:** Models are weighted based on their proven reliability. A model with low ECE (highly calibrated) exerts more influence than a poorly calibrated model.
 3. **Consensus Aggregation:** The engine computes the weighted ensemble probabilities. If the standard deviation among the top models exceeds a safety threshold, the system flags the result for **Human Review** due to low consensus.
 
-### 3.3 Explainability (Grad-CAM)
-Trust in medical AI requires transparency. CouncilMed generates genuine Class Activation Maps (CAMs).
+### 3.3 Explainability (Grad-CAM) & Multi-Heatmap Grid
+Trust in medical AI requires transparency and visual divergence across different architectures. CouncilMed generates genuine Class Activation Maps (CAMs) and presents them in an integrated **Multi-Heatmap Grid**.
 
 * **Mechanism:** The backend hooks into the final convolutional layers of the PyTorch models during the backward pass.
-* **Data Flow:** Gradients of the target class are computed with respect to the feature maps. The maps are globally average-pooled and combined via ReLU to produce the heatmap (`backend/explainability/gradcam.py`).
-* **Visual Rendering:** The `.npy` tensor heatmaps are instantly translated to transparent RGBA PNG overlays (`backend/media.py`) and dynamically scaled to the image's original `naturalWidth` and `naturalHeight` in the React frontend (`MedicalImageViewer.tsx`).
-* **Auxiliary Branch Exclusion:** The pipeline dynamically analyzes model computational graphs, actively excluding disconnected auxiliary branches (like spatial attention heads) from the hook process to ensure gradients successfully flow through the main backbone.
+* **Model-Specific Weighting:** Heatmaps weight genuine neural network gradients at $80\%$ and tissue radiomic priors at $20\%$ (`backend/explainability/gradcam.py`), ensuring visual distinctiveness rather than blurred generic overlays.
+* **Differentiated Medical Colormaps:** Each council architecture is mapped to a dedicated colormap to visually emphasize its receptive field properties:
+  - **AttentionNet**: `Inferno` (black $\to$ red $\to$ yellow), highlighting focal high-attention nidi.
+  - **DenseNet / CheXNet**: `Turbo` (rainbow high-contrast), emphasizing tissue heterogeneity and dense multi-scale features.
+  - **ResNet / UNet**: `Plasma` (purple $\to$ magenta $\to$ amber), highlighting lesion margins and structural boundaries.
+* **Visual Rendering:** The `.npy` tensor heatmaps are translated to transparent RGBA PNG overlays (`backend/media.py`) and rendered both in the single-image viewport and the 4-quadrant comparative `MultiHeatmapGrid.tsx`.
+* **Bounding Box Localization & Clamping:** Bounding boxes are computed via connected-component labeling and energy ranking, normalized strictly against the original `imageShape` ($[H, W]$) rather than client container dimensions, and clamped to $[0.0, 1.0]$. The `CouncilEngine` computes a confidence-weighted consensus bounding box fused across all agreeing members.
+* **Auxiliary Branch Exclusion:** The pipeline dynamically analyzes model computational graphs, actively excluding disconnected auxiliary branches from the hook process to ensure gradients successfully flow through the main backbone.
 
 ### 3.4 Media Generation & Serving
 Because web browsers cannot render raw `DICOM` or `NIfTI` volumes natively, CouncilMed intercepts these files immediately upon upload.

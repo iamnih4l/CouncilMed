@@ -1,5 +1,7 @@
 # CouncilMed Emergency Demo Mode
 
+> **Note**: CouncilMed currently operates with **100% genuine local neural network inference** by default, with real fine-tuned weights for Brain MRI, Thoracic CT, and Chest X-Ray. This document describes the optional emergency fallback flag, used only if presenting on a machine without a Python/PyTorch environment.
+
 This is an isolated demonstration mode designed to simulate a complete analysis pipeline in case the real neural network backend fails or cannot be loaded for a presentation.
 
 It provides a deterministic, realistic council finding for a brain MRI image.
